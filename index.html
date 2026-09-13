@@ -1,0 +1,1638 @@
+<!doctype html>
+<html lang="zh-CN" data-page-node-id="kV7zzzmXUHbBMGXTDs4C0s">
+<head data-page-node-id="DgJDCjJ85qF71pglWP4CPO">
+<meta charset="utf-8" data-page-node-id="IVsixRYM2Dfwj8JWo1MFmq">
+<meta name="viewport" content="width=device-width,initial-scale=1" data-page-node-id="ivWvO8ZEmdLxD3g0gGrJuB">
+<title>李伟 · Leefish · 内容生态运营</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+<style>
+:root{
+  --bg:#0a0a0a; --bg-2:#111; --line:rgba(255,255,255,.08); --line-2:rgba(255,255,255,.14);
+  --t1:#f5f5f5; --t2:rgba(255,255,255,.74); --t3:rgba(255,255,255,.5); --t4:rgba(255,255,255,.32);
+  --accent:rgba(255,255,255,.92);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:var(--bg);color:var(--t1);font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",Inter,sans-serif;-webkit-font-smoothing:antialiased;scroll-behavior:smooth}
+body{overflow-x:hidden}
+a{color:inherit;text-decoration:none}
+img,video{display:block;max-width:100%}
+button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
+
+/* ============ 顶部固定导航 ============ */
+.nav{position:fixed;top:0;left:0;right:0;height:64px;display:flex;align-items:center;justify-content:space-between;padding:0 40px;background:rgba(10,10,10,.72);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);border-bottom:1px solid var(--line);z-index:100}
+.nav .logo{font-size:20px;font-weight:700;letter-spacing:.04em}
+.nav .logo small{color:var(--t3);font-size:12px;margin-left:8px;font-weight:400;letter-spacing:.2em}
+.nav .menu{display:flex;gap:38px;font-size:14px;color:var(--t2)}
+.nav .menu a{position:relative;padding:6px 0;transition:color .25s}
+.nav .menu a::after{content:'';position:absolute;left:0;right:0;bottom:-2px;height:1px;background:var(--t1);transform:scaleX(0);transform-origin:left;transition:transform .3s}
+.nav .menu a:hover{color:var(--t1)}
+.nav .menu a:hover::after{transform:scaleX(1)}
+.nav .menu a.active{color:var(--t1)}
+.nav .menu a.active::after{transform:scaleX(1)}
+.nav .burger{display:none;width:36px;height:36px;flex-direction:column;justify-content:center;align-items:center;gap:5px;background:transparent;border:none;cursor:pointer;padding:0;border-radius:8px;transition:background .2s}
+.nav .burger:hover{background:rgba(255,255,255,.06)}
+.nav .burger span{display:block;width:20px;height:1.6px;background:var(--t1);border-radius:1px;transition:transform .25s,opacity .25s;transform-origin:center}
+.nav.open .burger span:nth-child(1){transform:translateY(6.6px) rotate(45deg)}
+.nav.open .burger span:nth-child(2){opacity:0}
+.nav.open .burger span:nth-child(3){transform:translateY(-6.6px) rotate(-45deg)}
+.nav .cta{padding:8px 16px;border:1px solid var(--line-2);border-radius:999px;font-size:13px;color:var(--t1);transition:all .25s}
+.nav .cta:hover{background:#fff;color:#0a0a0a;border-color:#fff}
+
+/* ============ 通用 Slide ============ */
+/* 统一节奏（对齐 pryzm 参考页：所有区块一律 py-20 sm:py-28，靠"内容 + 等距 padding"决定高度）
+   —— 关键：不再用 min-height:100vh 撑高区块。内容不足一屏时，100vh 会在区块底部凭空空出一大块，
+   这正是"P2→P3 之间出现一大片空白"的根因。现在每个区块高度 = 内容高度 + 上下各 120px，
+   相邻区块内容间距恒为 120+120=240px，全站统一。 */
+:root{--sec-pt:120px;--sec-pb:120px;--sec-px:80px}
+.slide{padding:var(--sec-pt) var(--sec-px) var(--sec-pb);position:relative;display:flex;flex-direction:column}
+
+/* ============ P1 拖拽画布（还原 pryzm：1:1 跟手 / 无惯性 / Ctrl+滚轮缩放） ============ */
+/* P1 严格占满首屏（100svh）：scrollY=0 时视口内只有 P1，不会出现"同时看到 P1 和 P2" */
+#p1{padding:0;height:100svh;min-height:560px;overflow:hidden;background:radial-gradient(ellipse at 30% 20%,#1a1a1a 0%,#0a0a0a 60%);position:relative;display:flex;flex-direction:column;justify-content:flex-end}
+#p1 .stage{position:absolute;inset:0;cursor:grab;overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none}
+#p1 .stage.dragging{cursor:grabbing}
+/* 世界尺寸固定 px（设计基准 1600×900），不随视口缩放 → 卡片间距恒定 */
+#p1 .canvas{position:absolute;left:0;top:0;width:2600px;height:1560px;transform-origin:0 0;will-change:transform}
+#p1 .card{position:absolute;cursor:pointer}
+#p1 .card .thumb{position:relative;width:100%;border-radius:12px;overflow:hidden;background:#161616;box-shadow:0 16px 40px rgba(0,0,0,.55),0 0 0 1px rgba(255,255,255,.07) inset;transition:box-shadow .35s,transform .35s}
+#p1 .card .thumb img{width:100%;height:100%;object-fit:cover;display:block}
+#p1 .card:hover .thumb{box-shadow:0 26px 70px rgba(0,0,0,.72),0 0 0 1px rgba(255,255,255,.2) inset;transform:translateY(-4px)}
+#p1 .card .num{display:none} /* 作品编号角标：已隐藏（如需恢复去掉本行 display:none） */
+#p1 .card .meta{margin-top:9px;display:flex;flex-direction:column;gap:2px}
+#p1 .card .t1{font-size:12px;font-weight:500;color:var(--t2);letter-spacing:.03em;line-height:1.4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#p1 .card .t2{font-size:10.5px;color:var(--t4);letter-spacing:.14em;text-transform:uppercase;line-height:1.4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* scrim 加强：底部 16% 区域直接打到 rgba(10,10,10,1)，确保 P1 最末段画面被完全遮黑；无论浏览器多高，P1 末段都不会透出 P2 内容 */
+#p1 .scrim{position:absolute;inset:0;pointer-events:none;background:linear-gradient(180deg,rgba(10,10,10,.55) 0%,rgba(10,10,10,.15) 14%,rgba(10,10,10,0) 26%,rgba(10,10,10,0) 50%,rgba(10,10,10,.45) 70%,rgba(10,10,10,.88) 84%,rgba(10,10,10,1) 100%)}
+/* 标题：回归普通文档流（对齐 pryzm 参考页 hero：文案层是 flex items-end 容器里的普通块，不做 fixed / 不做视差）
+   → 滚动位移严格 1:1：页面滚多少，标题就上移多少，与鼠标滚动速度完全一致；
+   → 标题属于 P1，滚出 P1 即刻离开视口，不存在"滚到 P2 还没消失、与 P2 内容交叠"的问题。 */
+#p1 .hello-wrap{position:relative;z-index:2;width:100%;padding:0 var(--sec-px) 58px;pointer-events:none}
+#p1 .hello{text-align:left;max-width:min(1080px,74vw)}
+/* P1 底部标题：主标题 46px 粗白；副标题为次级层级（较小字号、常规字重、半透明白） */
+#p1 .hello .l1{font-size:46px;font-weight:700;letter-spacing:.04em;line-height:1.12;color:#fff}
+#p1 .hello .l2{margin-top:12px;font-size:24px;font-weight:400;letter-spacing:.06em;line-height:1.3;color:rgba(255,255,255,.62)}
+#p1 .control-tip{position:absolute;right:40px;bottom:36px;font-size:11px;color:var(--t4);letter-spacing:.16em;line-height:1.9;text-align:right;pointer-events:none;transition:opacity .45s ease}
+
+/* ============ P2 介绍页 ============ */
+/* 统一节奏：padding 跟随 .slide（120/120），不再为"承接标题"单独加 padding-top 130 / padding-bottom 0
+   —— 那套是为了配合之前的 fixed 视差标题，标题回归文档流后已不需要；底部留白改由统一 padding 提供 */
+#p2{justify-content:flex-start;align-items:center;background:#0a0a0a}
+#p2 .intro{display:grid;grid-template-columns:380px 1fr;gap:80px;max-width:1100px;width:100%;align-items:center}
+#p2 .photo{position:relative}
+#p2 .photo img{width:100%;height:auto;border-radius:24px;box-shadow:0 30px 80px rgba(0,0,0,.7)}
+#p2 .photo .deco{position:absolute;inset:-24px;border:1px solid var(--line);border-radius:36px;pointer-events:none}
+#p2 .name{font-size:64px;font-weight:700;letter-spacing:-.02em;line-height:1}
+#p2 .name span{color:var(--t3);font-weight:400;margin-left:18px;font-size:36px;letter-spacing:.04em}
+#p2 .focus{margin-top:36px;font-size:18px;color:var(--t2);line-height:1.7}
+#p2 .focus b{color:var(--t1);font-weight:600}
+#p2 .story{margin-top:28px;font-size:15px;color:var(--t3);line-height:1.85;max-width:560px}
+#p2 .contact{margin-top:40px;display:grid;grid-template-columns:repeat(3,1fr);gap:14px;max-width:600px}
+#p2 .contact .item{padding:14px 18px;border:1px solid var(--line);border-radius:14px;background:rgba(255,255,255,.02);transition:all .3s;cursor:pointer}
+#p2 .contact .item:hover{background:rgba(255,255,255,.06);border-color:var(--line-2)}
+#p2 .contact .label{font-size:11px;color:var(--t3);letter-spacing:.2em;text-transform:uppercase}
+#p2 .contact .value{margin-top:6px;font-size:15px;color:var(--t1);font-weight:500}
+#p2 .copy-toast{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#fff;color:#0a0a0a;padding:12px 22px;border-radius:999px;font-size:14px;font-weight:500;opacity:0;pointer-events:none;transition:opacity .25s;z-index:200}
+
+/* WECHAT 悬浮二维码（hover wechat 卡片时浮现）— 边长×√2 ≈ 面积×2 + 黑色底框 */
+#p2 .wechat-pop{position:absolute;left:50%;top:calc(100% + 8px);transform:translateX(-50%) translateY(-4px);padding:9px;background:#000;border-radius:10px;box-shadow:0 12px 32px rgba(0,0,0,.55),0 0 0 1px rgba(255,255,255,.06);opacity:0;pointer-events:none;transition:opacity .25s ease,transform .25s ease;z-index:120;width:108px}
+#p2 .wechat-pop::before{content:'';position:absolute;left:50%;top:-4px;width:8px;height:8px;background:#000;transform:translateX(-50%) rotate(45deg);box-shadow:-1px -1px 0 rgba(255,255,255,.06)}
+#p2 .wechat-pop img{display:block;width:90px;height:90px;border-radius:6px}
+#p2 .contact .item.wechat{position:relative}
+#p2 .contact .item.wechat:hover .wechat-pop,
+#p2 .contact .item.wechat.show-qr .wechat-pop{opacity:1;transform:translateX(-50%) translateY(0);pointer-events:auto}
+
+/* ============ P3 核心价值交付 ============ */
+/* 统一节奏：padding 跟随 .slide（120/120）；背景统一 #0a0a0a 纯色 */
+#p3{justify-content:center;background:#0a0a0a}
+#p3 .header{text-align:center;margin-bottom:60px}
+#p3 .header .eyebrow{font-size:12px;color:var(--t3);letter-spacing:.32em;text-transform:uppercase}
+#p3 .header h2{margin-top:14px;font-size:56px;font-weight:700;letter-spacing:-.02em;line-height:1.1}
+#p3 .header .sub{margin-top:18px;font-size:16px;color:var(--t3);letter-spacing:.04em}
+#p3 .grid{display:grid;grid-template-columns:repeat(5,1fr);gap:18px;max-width:1280px;margin:0 auto;width:100%}
+#p3 .node{padding:36px 28px;border:1px solid var(--line);border-radius:20px;background:rgba(255,255,255,.02);transition:all .4s;position:relative;overflow:hidden;cursor:pointer;min-height:380px;display:flex;flex-direction:column}
+#p3 .node::before{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(255,255,255,.04),transparent 60%);opacity:0;transition:opacity .4s}
+#p3 .node:hover{border-color:var(--line-2);background:rgba(255,255,255,.04);transform:translateY(-6px)}
+#p3 .node:hover::before{opacity:1}
+#p3 .node .idx{font-size:13px;color:var(--t3);letter-spacing:.24em;font-weight:500}
+#p3 .node h3{margin-top:18px;font-size:22px;font-weight:600;letter-spacing:-.01em;line-height:1.3;min-height:2.6em;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+#p3 .node .desc{margin-top:18px;font-size:14px;color:var(--t3);line-height:1.75;flex:1}
+#p3 .node .num{margin-top:auto;padding-top:24px;font-size:11px;color:var(--t4);letter-spacing:.24em;text-transform:uppercase}
+
+/* ============ P4 职业轨迹 ============ */
+/* ============ P4 职业轨迹 ============ */
+/* 圆条胶囊 + 右下角磨砂渐变；高度由内容驱动（min-height: 0 解除 .slide{100vh} 的强制拉伸） */
+#p4{padding:0;background:#0a0a0a;overflow:hidden;display:flex;flex-direction:column}
+#p4 .label{padding:var(--sec-pt) var(--sec-px) 60px}
+#p4 .label h2{font-size:44px;font-weight:700;letter-spacing:-.02em;line-height:1.1}
+#p4 .label .sub{margin-top:10px;font-size:13px;color:var(--t3);letter-spacing:.18em;text-transform:uppercase}
+/* 手风琴容器：整体居中（width:fit-content + margin auto，组件作为一个 group 居中而非占满整行）；
+   高度不再随 active 内容忽高忽低 */
+#p4 .accordion{
+  flex:0 0 auto;display:flex;gap:14px;
+  padding:0 var(--sec-px) var(--sec-pb);padding-top:0;
+  width:fit-content;margin:0 auto;
+  align-items:flex-start;justify-content:flex-start;
+}
+/* 圆条胶囊：固定宽度（不随浏览器宽度弹性），保证"胶囊形"恒定；
+   高度统一为 --p4-h（JS 实测"虎牙"展开高度后锁定），四个胶囊与展开卡片永远同高，切换不再忽高忽低 */
+#p4 .panel{
+  flex:0 0 110px;            /* 固定 inactive 宽度，浏览器拉宽也不再变矩形 */
+  position:relative;
+  width:110px;               /* 兜底宽度 */
+  height:var(--p4-h,340px);  /* ← 统一高度：胶囊圆条 == 展开卡片 */
+  border-radius:80px;
+  overflow:hidden;
+  background:#131313;
+  border:1px solid var(--line);
+  cursor:pointer;
+  transition:flex .55s cubic-bezier(.7,.0,.2,1), width .55s cubic-bezier(.7,.0,.2,1), border-color .35s, background .35s;
+  display:flex;flex-direction:column;
+}
+#p4 .panel:hover{border-color:var(--line-2);background:#161616}
+/* 激活态：占据固定宽度（缩短至红框宽度），不再 flex 弹性占满 */
+#p4 .panel.active{flex:0 0 480px;width:480px;background:#161616;border-color:var(--line-2)}
+/* 测量态：JS 锁高时用，强制 480 宽 + 关 transition，避免 width transition 0.55s 中读到旧值把 body 撑高 */
+#p4 .panel.measuring{flex:0 0 480px !important;width:480px !important;transition:none !important}
+/* 磨砂渐变（右下角）：双层 radial + blur，形成"从角落扩散的彩色雾" */
+#p4 .panel::after{
+  content:'';
+  position:absolute;
+  right:-40%;bottom:-30%;
+  width:90%;height:80%;
+  background:
+    radial-gradient(circle at 30% 30%, rgba(140,165,210,.26), transparent 65%),
+    radial-gradient(circle at 75% 75%, rgba(95,120,160,.18), transparent 70%);
+  filter:blur(40px);
+  pointer-events:none;
+  z-index:0;
+  opacity:.55;
+  transition:opacity .5s, background .5s;
+}
+#p4 .panel.active::after{
+  background:
+    radial-gradient(circle at 30% 30%, rgba(150,175,220,.32), transparent 60%),
+    radial-gradient(circle at 75% 75%, rgba(105,130,170,.22), transparent 65%);
+  opacity:.95;
+}
+/* 未展开时的竖排标签：公司名(中) + 时间(底) 两段各自竖向堆叠，沿胶囊中线垂直延伸，互不重叠；
+   整体上移 16px（删了顶部图标占位后视觉重心偏高，需再上抬让公司名落在视觉中心偏上的位置） */
+#p4 .panel .label-strip{
+  position:absolute;
+  left:50%;top:50%;
+  transform:translate(-50%, calc(-50% - 16px));
+  display:flex;flex-direction:column;
+  align-items:center;
+  gap:26px;
+  pointer-events:none;
+  white-space:nowrap;
+  transition:opacity .35s;
+  z-index:2;
+  text-align:center;
+}
+/* 公司名：竖排（writing-mode:vertical-rl）+ 字符头朝上（text-orientation:upright），不旋转 */
+#p4 .panel .label-strip .co{
+  font-size:18px;font-weight:600;letter-spacing:0;color:var(--t1);
+  line-height:1;
+  writing-mode:vertical-rl;
+  text-orientation:upright;
+  height:48px;                 /* 2 字 × 18px = 36 + 余量，强制容器固定高度避免被 flex 拉变形 */
+  flex-shrink:0;
+}
+/* 时间：横排文本 + rotate(90deg) → 字符头朝右，沿垂直方向铺开；容器固定 14 宽 × 130 高 */
+#p4 .panel .label-strip .ti{position:relative;width:14px;height:130px;flex-shrink:0}
+#p4 .panel .label-strip .ti-text{
+  position:absolute;left:50%;top:50%;
+  transform:translate(-50%,-50%) rotate(90deg);
+  transform-origin:center;
+  white-space:nowrap;line-height:1;
+  font-size:11px;font-weight:400;letter-spacing:.16em;color:var(--t4);
+}
+#p4 .panel.active .label-strip{opacity:0}
+/* pill：公司名 + 时间 — 两段拉开距离避免重叠；时间色更弱 */
+#p4 .panel .pill{
+  position:absolute;
+  top:36px;left:40px;right:40px;
+  display:none;
+  align-items:baseline;
+  gap:56px;
+  z-index:3;
+  pointer-events:none;
+}
+#p4 .panel.active .pill{display:flex}
+#p4 .panel .pill .company{font-size:26px;font-weight:600;letter-spacing:-.01em;line-height:1.2}
+#p4 .panel .pill .time{font-size:12px;color:var(--t4);letter-spacing:.2em;font-weight:400;text-transform:uppercase}
+/* 内容区：紧凑布局，由内容驱动高度，不强制填满 panel */
+#p4 .panel .body{
+  padding:96px 44px 32px;       /* top 与 pill (32px) + 间距 64px；bottom 32 让内容靠近底缘 */
+  display:none;
+  flex-direction:column;
+  position:relative;z-index:2;
+}
+#p4 .panel.active .body{display:flex}
+#p4 .panel .body .role{font-size:15px;color:var(--t2);letter-spacing:.04em;margin-bottom:6px}
+#p4 .panel .body .role b{color:var(--t1);font-weight:500}
+#p4 .panel .body .biz{margin-top:14px;display:flex;flex-direction:column;gap:12px}
+#p4 .panel .body .biz div{font-size:14px;color:var(--t2);line-height:1.7;padding-left:18px;position:relative}
+#p4 .panel .body .biz div::before{content:'';position:absolute;left:0;top:11px;width:6px;height:1px;background:var(--t3)}
+/* 底部 KPI 已删除，按用户要求只保留 bullet 内容，不再额外展示关键数据 */
+
+/* ============ P5/P6 履历页 ============ */
+/* 背景统一 #0a0a0a 纯色（与 P4 衔接无色差） */
+/* 左右两列：左列职责（5 条）/ 右列关键成果（4 条）— 紧凑条目式，关键数据加粗；不再"放大展示"成果卡 */
+.exp{background:#0a0a0a}
+.exp .head{max-width:1280px;margin:0 auto 48px;width:100%}
+.exp .head .eyebrow{font-size:12px;color:var(--t3);letter-spacing:.32em;text-transform:uppercase;margin-bottom:14px}
+.exp .head h2{font-size:48px;font-weight:700;letter-spacing:-.02em;line-height:1.1}
+.exp .head .meta{margin-top:18px;display:flex;flex-wrap:wrap;gap:24px;font-size:14px;color:var(--t3);letter-spacing:.04em}
+.exp .head .meta b{color:var(--t1);font-weight:500}
+.exp .layout{max-width:1280px;margin:0 auto;width:100%;display:grid;grid-template-columns:1fr 1fr;gap:64px;align-items:stretch}
+/* 左右列统一样式：紧凑条目列表（不再用卡）
+   恢复常规 flex 纵向流 —— 行距紧凑，不做 grid 等分（等分会把每个职责行拉成 1fr 大行距）。
+   高度锁定改由 JS `lockExpHeight()` 给 .col-list 设 min-height 实现（见文件底部 JS），
+   锁的是"自然高度 + 最长 desc 与首个 desc 的差值"，既恒定又只留极小余量。 */
+.exp .col-list{display:flex;flex-direction:column}
+.exp .col-title{font-size:11px;color:var(--t4);letter-spacing:.28em;text-transform:uppercase;margin-bottom:18px;padding-bottom:14px;border-bottom:1px solid var(--line)}
+.exp .list-item{
+  padding:18px 0;border-bottom:1px solid var(--line);
+  display:flex;flex-direction:column;gap:8px;
+  will-change:transform,opacity;cursor:pointer;
+}
+.exp .list-item:last-child{border-bottom:none}
+.exp .list-item .h{font-size:14.5px;font-weight:500;color:var(--t1);letter-spacing:.02em;line-height:1.5}
+.exp .list-item .h::before{content:'';display:inline-block;width:0;height:0;margin-right:6px;border-top:4px solid transparent;border-bottom:4px solid transparent;border-left:5px solid var(--t4);vertical-align:middle;transition:transform .25s, border-left-color .25s}
+.exp .list-item:hover .h::before{transform:translateX(3px);border-left-color:var(--t1)}
+.exp .list-item .desc{
+  font-size:13px;color:var(--t2);line-height:1.75;
+  max-height:0;opacity:0;overflow:hidden;
+  /* 仅过渡 opacity；max-height 与 margin-top 改为瞬时切换，
+     避免两个 desc 在 transition 同时段都被内容限定为可见导致列高 47~68px 短暂增高 */
+  transition:opacity .22s ease;
+  margin-top:0;
+}
+/* 第一个 .list-item 默认展开（持续可见，不依赖 hover）；
+   用 .col-title + .list-item 选中"紧跟在列标题后的第一个职责项"，
+   避开 .col-title 是 div 类型导致 :first-of-type 失效的陷阱。
+   max-height 给足（420px）让文字自然完整显示，不出现内部滚动条。 */
+.exp .col-title + .list-item .desc{max-height:420px;opacity:1;overflow:visible;margin-top:8px}
+/* 但当列表中**任意其他**职责被 hover 时（list 容器获 .has-hover），让第一个默认展开的自动收纳 —— 单选互斥；
+   注意：has-hover 加在 .col-list 上（不是 .exp 上），用 `.col-list.has-hover` 命中容器 */
+.col-list.has-hover .col-title + .list-item:not(.hover) .desc{max-height:0;opacity:0;overflow:hidden;margin-top:0}
+/* 任意职责（除第一个外）hover 展开详情；第一个 hover 时也保持展开 */
+.exp .list-item:hover .desc,
+.exp .list-item.hover .desc{max-height:420px;opacity:1;overflow:visible;margin-top:8px}
+.exp .list-item .desc b{color:var(--t1);font-weight:600}
+/* 右侧关键成果条目 */
+.exp .ach-item{padding:18px 0;border-bottom:1px solid var(--line);display:flex;align-items:flex-start;gap:16px}
+.exp .ach-item:last-child{border-bottom:none}
+.exp .ach-item .dot{flex:0 0 auto;margin-top:9px;width:5px;height:5px;border-radius:50%;background:var(--t3)}
+.exp .ach-item .txt{font-size:13.5px;color:var(--t2);line-height:1.75}
+.exp .ach-item .txt b{color:var(--t1);font-weight:600;letter-spacing:.02em}
+.exp .ach-item:hover .txt b{color:#fff}
+
+/* ============ P7 项目案例 ============ */
+/* 背景统一 #0a0a0a 纯色（与 P6 衔接无色差） */
+#p7{background:#0a0a0a}
+#p7 .head{max-width:1280px;margin:0 auto 60px;width:100%}
+#p7 .head h2{font-size:48px;font-weight:700;letter-spacing:-.02em;line-height:1.1}
+#p7 .head .sub{margin-top:14px;font-size:14px;color:var(--t3);letter-spacing:.04em}
+/* 两卡等高：grid align-items:stretch（默认）+ 内容区 flex:1，短的卡片多余空间落在按钮前，按钮始终贴底对齐 */
+#p7 .cases{max-width:1280px;margin:0 auto;width:100%;display:grid;grid-template-columns:1fr 1fr;gap:32px;align-items:stretch}
+#p7 .case{padding:40px;border:1px solid var(--line);border-radius:24px;background:rgba(255,255,255,.02);display:flex;flex-direction:column;gap:24px;position:relative;overflow:hidden}
+#p7 .case h3{font-size:30px;font-weight:700;letter-spacing:-.02em;line-height:1.2}
+#p7 .case .intro{font-size:14px;color:var(--t3);line-height:1.85}
+#p7 .case .role{font-size:14px;color:var(--t2);line-height:1.85}
+#p7 .case .role b{color:var(--t1);font-weight:500}
+#p7 .case .section-title{font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:var(--t4);padding-top:18px;border-top:1px solid var(--line)}
+#p7 .case .achievements{display:flex;flex-direction:column;gap:12px}
+#p7 .case .achievements div{font-size:13.5px;color:var(--t2);line-height:1.75;padding-left:18px;position:relative}
+#p7 .case .achievements div::before{content:'◦';position:absolute;left:0;top:0;color:var(--t3)}
+/* 「前往项目」标签按钮：始终贴卡片底部，两卡按钮基线一致 */
+#p7 .case .go{margin-top:auto;padding-top:4px}
+#p7 .case .go a{
+  display:inline-flex;align-items:center;gap:10px;
+  padding:11px 22px;border:1px solid var(--line-2);border-radius:999px;
+  font-size:12.5px;letter-spacing:.14em;color:var(--t1);
+  text-decoration:none;background:rgba(255,255,255,.03);
+  transition:border-color .3s,background .3s,color .3s,transform .3s;
+}
+#p7 .case .go a::after{content:'→';font-size:13px;color:var(--t3);transition:transform .3s,color .3s}
+#p7 .case .go a:hover{border-color:rgba(255,255,255,.45);background:rgba(255,255,255,.09);color:#fff;transform:translateY(-2px)}
+#p7 .case .go a:hover::after{transform:translateX(4px);color:#fff}
+#p7 .sub-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+#p7 .sub-card{padding:18px;border:1px solid var(--line);border-radius:14px;background:rgba(255,255,255,.02);transition:all .3s;cursor:pointer}
+#p7 .sub-card:hover{border-color:var(--line-2);background:rgba(255,255,255,.05);transform:translateY(-3px)}
+#p7 .sub-card .name{font-size:14px;font-weight:500;color:var(--t1);letter-spacing:.04em}
+#p7 .sub-card .info{margin-top:8px;font-size:12.5px;color:var(--t3);line-height:1.6}
+#p7 .timeline{display:flex;flex-direction:column;gap:14px}
+#p7 .timeline .stage{padding:18px 22px;border-left:2px solid var(--line-2);position:relative}
+#p7 .timeline .stage::before{content:'';position:absolute;left:-5px;top:22px;width:8px;height:8px;border-radius:50%;background:#fff}
+#p7 .timeline .stage .phase{font-size:11px;color:var(--t3);letter-spacing:.24em;text-transform:uppercase;margin-bottom:8px}
+#p7 .timeline .stage .txt{font-size:13.5px;color:var(--t2);line-height:1.7}
+
+/* ============ P8 作品展示 ============ */
+/* 滚动驱动横向移动（非自动循环）：
+   监听 scroll 进度 → 三行 track 各自 translateX；
+   速度比 1x/2x/3x；JS 动态克隆 4 套内容，最大位移 -25% / -50% / -75% 永远无缝
+   间距紧凑（参考图）：行/列 gap 6px，border-radius 6px */
+#p8{padding:var(--sec-pt) 0 var(--sec-pb);background:#0a0a0a;overflow:hidden;display:flex;flex-direction:column}
+#p8 .label{padding:0 var(--sec-px) 50px}
+#p8 .label h2{font-size:48px;font-weight:700;letter-spacing:-.02em;line-height:1.1}
+#p8 .label .sub{margin-top:14px;font-size:14px;color:var(--t3);letter-spacing:.16em;text-transform:uppercase}
+/* 横向滚动驱动容器：3 行 row，紧凑 gap */
+#p8 .rows{display:flex;flex-direction:column;gap:6px;width:100%}
+#p8 .row{position:relative;height:200px;width:100%;overflow:hidden}
+/* track：JS 已克隆 4 套（共 56 个 item），width:max-content，随 scroll 横向移动 */
+#p8 .track{display:flex;gap:6px;width:max-content;height:100%;will-change:transform;transform:translate3d(0,0,0)}
+/* 三种基础比例（高度统一 200，宽度由比例推算）*/
+#p8 .item.sq{width:200px;height:200px}                 /* 1 × 1 */
+#p8 .item.portrait{width:150px;height:200px}          /* 3 × 4 (w:h = 3:4 → w=200*3/4) */
+#p8 .item.landscape{width:266px;height:200px}         /* 4 × 3 (w:h = 4:3 → w=200*4/3) */
+/* 扩展比例（个别项目需要） */
+#p8 .item.sixteen-nine{width:356px;height:200px}      /* 16 : 9 */
+#p8 .item.three-two{width:300px;height:200px}         /* 3 : 2 */
+#p8 .item{flex:0 0 auto;border-radius:6px;overflow:hidden;background:#181818;border:1px solid var(--line);position:relative;cursor:pointer;transition:transform .35s, border-color .35s, box-shadow .35s}
+#p8 .item:hover{transform:translateY(-4px) scale(1.02);border-color:rgba(255,255,255,.25);box-shadow:0 18px 40px rgba(0,0,0,.6);z-index:2}
+/* 封面素材（data-cover 注入）：铺满固定尺寸框，object-fit:cover 保证不变形
+   无封面时显示 .ph 编号占位（含尺寸文字），替换后自动隐藏 */
+#p8 .item .cov{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;pointer-events:none}
+#p8 .item .ph{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;font-size:12px;letter-spacing:.14em;color:rgba(255,255,255,.30)}
+#p8 .item.has-cover .ph{display:none}
+#p8 .item.accent{background:linear-gradient(135deg,#ff5a36 0%,#d63a18 60%,#a82b10 100%);border-color:rgba(255,255,255,.18)}
+#p8 .item.accent.has-cover{border-color:rgba(255,120,80,.45)}
+
+/* ============ P9 游戏经历 ============ */
+/* 背景统一 #0a0a0a 纯色 */
+#p9{background:#0a0a0a}
+#p9 .head{max-width:853px;margin:0 auto 48px;width:66.67%}
+#p9 .head h2{font-size:48px;font-weight:700;letter-spacing:-.02em;line-height:1.1}
+#p9 .head .sub{margin-top:14px;font-size:14px;color:var(--t3);letter-spacing:.04em}
+/* 主要游戏经历：缩窄至当前 2/3（约 853px），居中；
+   卡片设计（按用户 PS 设计稿）：
+   - 整卡 = 单一圆角矩形容器，圆角 24px
+   - 上方 = 16:9 比例封面图（aspect-ratio:16/9，cover 适配，不裁切变形）
+   - 下方 = 纯黑 #161616 底色 + 紧凑文字（高度由内容决定，不强制撑满 → 不会有底部留白）
+   - 右下角白色模糊渐变光斑（::after），营造高级感
+   - 整卡无 frosted glass、无 radial-gradient 顶光、无 SVG noise
+   - 整卡宽度由 grid 决定，单卡 ~414px，414 / 16 * 9 ≈ 233 高的封面，下方 body ~95px */
+#p9 .featured{max-width:853px;margin:0 auto 64px;width:66.67%;display:grid;grid-template-columns:1fr 1fr;gap:24px}
+#p9 .game{
+  position:relative;
+  border-radius:24px;
+  overflow:hidden;
+  border:1px solid var(--line);
+  cursor:pointer;
+  transition:transform .4s, border-color .4s;
+  background:#161616;
+  display:flex;flex-direction:column;
+}
+/* 封面区：16:9 比例（aspect-ratio 锁比例，不管卡片宽度多少都保持 16:9）
+   cover img 用 object-fit:cover，主体人物居中保留，左右可裁 */
+#p9 .game .cover{
+  position:relative;
+  width:100%;
+  aspect-ratio:16/9;
+  flex-shrink:0;
+  overflow:hidden;
+  background:#0d0d0d;
+}
+#p9 .game .cover img{
+  position:absolute;inset:0;
+  width:100%;height:100%;
+  object-fit:cover;display:block;
+  transition:transform .5s ease;
+}
+#p9 .game:hover .cover img{transform:scale(1.04)}
+/* 文字区：高度由内容决定（不强制 flex:1 撑满）→ 简介少时也无底部空白 */
+#p9 .game .body{
+  position:relative;
+  padding:20px 26px 22px;
+  background:#161616;
+  color:#fff;
+}
+#p9 .game .body h3{font-size:22px;font-weight:700;letter-spacing:-.01em;line-height:1.2;color:#fff}
+#p9 .game .body p{margin-top:8px;font-size:13px;color:rgba(255,255,255,.78);line-height:1.65}
+/* 右下角白色模糊渐变光斑：高级感点缀
+   覆盖在 body 之上，定位在卡片右下角，柔和柔和白色光晕（PS 设计稿同款） */
+#p9 .game::after{
+  content:"";
+  position:absolute;
+  right:0px;bottom:0px;
+  width:220px;height:160px;
+  border-radius:50%;
+  background:radial-gradient(ellipse at right bottom, rgba(255,255,255,.40) 0%, rgba(255,255,255,.15) 35%, transparent 65%);
+  filter:blur(22px);
+  pointer-events:none;
+  z-index:2;
+}
+#p9 .game:hover{border-color:var(--line-2);transform:translateY(-3px)}
+/* 其他游戏经历：缩窄至当前 1/2（约 640px），居中；六边形 + 三行 少-多-少 布局（5 - 6 - 5 = 16） */
+#p9 .wall{max-width:640px;margin:0 auto;width:50%}
+#p9 .wall h4{font-size:12px;color:var(--t3);letter-spacing:.24em;text-transform:uppercase;margin-bottom:32px;text-align:center}
+#p9 .hex-stack{display:flex;flex-direction:column;align-items:center;gap:8px}
+#p9 .hex-row{display:flex;gap:8px;justify-content:center}
+/* 三行 5-6-5 全部居中：相邻行 hex 数差 1 → 居中后天然错位 44px（半个 hex + gap/2），形成蜂巢交错 */
+/* 六边形：80 × 92
+   黑底图标和深背景融合问题 — 用两层结构：
+     1. 外层 .hex（本元素）：白色半透明背景 + 内嵌 .hex-inner 小 2px，形成"白色 1px 描边"
+     2. filter: drop-shadow 强化外发光，让白描边周围还有柔和光晕 */
+#p9 .hex{
+  width:80px;height:92px;
+  position:relative;
+  clip-path:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%);
+  background:rgba(255,255,255,.28);        /* 白描边底：内层图片缩进 1px 后露出 */
+  cursor:pointer;
+  transition:transform .3s, filter .3s;
+  /* 强白色外发光 + 深阴影，双层 */
+  filter:drop-shadow(0 0 6px rgba(255,255,255,.6)) drop-shadow(0 4px 12px rgba(0,0,0,.8));
+}
+/* 内层：图片容器，比外层小 2px（每边 1px），让外层白色背景露出 1px 形成描边 */
+#p9 .hex .hex-inner{
+  position:absolute;
+  inset:1px;
+  clip-path:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%);
+  overflow:hidden;
+  background:#181818;
+}
+#p9 .hex img{
+  position:absolute;inset:1px;
+  width:calc(100% - 2px);height:calc(100% - 2px);
+  object-fit:cover;display:block;
+  clip-path:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%);
+}
+#p9 .hex:hover{transform:translateY(-3px) scale(1.06);filter:drop-shadow(0 0 10px rgba(255,255,255,.85)) drop-shadow(0 8px 20px rgba(0,0,0,.9)) brightness(1.15);z-index:3;background:rgba(255,255,255,.45)}
+/* hover 时上方弹出名称 tooltip */
+#p9 .hex .name{position:absolute;left:50%;bottom:calc(100% + 10px);transform:translateX(-50%);padding:6px 12px;font-size:12px;color:var(--t1);background:rgba(0,0,0,.92);border-radius:6px;border:1px solid var(--line-2);white-space:nowrap;opacity:0;pointer-events:none;transition:opacity .25s;z-index:5}
+#p9 .hex:hover .name{opacity:1}
+/* 占位文字（无图标时） */
+#p9 .hex .placeholder{width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--t3);text-align:center;padding:8px;line-height:1.3}
+
+/* 模态弹窗（P8 作品预览）—— 深色细边框 + 只保留标题 + 素材框 */
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.85);backdrop-filter:blur(8px);z-index:300;display:none;align-items:center;justify-content:center;padding:40px}
+.modal.show{display:flex}
+.modal .box{background:#131313;border:1.5px solid var(--line-2);border-radius:18px;max-width:560px;width:100%;padding:28px 28px 32px;position:relative}
+.modal .box .x{position:absolute;top:14px;right:18px;font-size:20px;color:var(--t3);cursor:pointer;width:32px;height:32px;display:flex;align-items:center;justify-content:center;border-radius:50%;transition:background .25s, color .25s}
+.modal .box .x:hover{background:rgba(255,255,255,.08);color:var(--t1)}
+.modal .box .title{font-size:18px;font-weight:600;letter-spacing:-.01em;color:var(--t1)}
+.modal .box .preview{margin-top:20px;width:100%;background:#1a1a1a;border-radius:12px;border:1px solid var(--line-2);position:relative;overflow:hidden}
+.modal .box .preview.sq{aspect-ratio:1/1}
+.modal .box .preview.portrait{aspect-ratio:3/4}
+.modal .box .preview.landscape{aspect-ratio:4/3}
+.modal .box .preview.cinematic{aspect-ratio:16/9}
+.modal .box .preview.three-two{aspect-ratio:3/2}
+.modal .box .preview img{width:100%;height:100%;object-fit:cover;display:block}
+
+/* ---- 详情素材模式（P8 双素材：封面 / 详情分离）----
+   .fit 容器由 JS 按「详情素材原始像素尺寸」计算宽高：
+     宽度 = 原图宽等比缩放到可用宽度（不超宽），高度 = 等比高度（不压扁）
+     高度 > 960px 时容器高度锁 960，出现纵向滚动条（不缩放图片，保证清晰）
+   仅在 .modal.detail 下放宽 box 最大宽度，避免影响 P1 卡片的固定比例弹窗 */
+.modal.detail .box{max-width:1040px;padding:24px 24px 28px}
+.modal .box .preview.fit{
+  aspect-ratio:auto !important;
+  width:auto;max-width:100%;
+  background:#0e0e0e;
+}
+.modal .box .preview.fit img{width:100%;height:auto;object-fit:contain;display:block;border-radius:8px}
+.modal .box .preview.fit .stack{display:flex;flex-direction:column;gap:10px}
+.modal .box .preview.fit .stack img{border-radius:8px}
+.modal .box .preview.fit.scroll{overflow-y:scroll;overflow-x:hidden;overscroll-behavior:contain}
+.modal .box .preview.fit.scroll::-webkit-scrollbar{width:10px}
+.modal .box .preview.fit.scroll::-webkit-scrollbar-track{background:rgba(255,255,255,.05);border-radius:5px}
+.modal .box .preview.fit.scroll::-webkit-scrollbar-thumb{background:rgba(255,255,255,.24);border-radius:5px}
+.modal .box .preview.fit.scroll::-webkit-scrollbar-thumb:hover{background:rgba(255,255,255,.40)}
+.modal .box .preview .ph-empty{
+  padding:70px 30px;text-align:center;font-size:13px;letter-spacing:.1em;color:var(--t3);
+}
+.modal .box .detail-tip{margin-top:12px;font-size:11px;letter-spacing:.08em;color:var(--t3);text-align:right}
+/* 详情页「访问项目」按钮：仅当有 data-link 时渲染在标题右侧 */
+.modal .box .head-row{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.modal .box .head-row .go-link{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:8px 16px;font-size:12px;letter-spacing:.08em;
+  background:#1a1a1a;border:1px solid var(--line-2);border-radius:999px;
+  color:var(--t1);text-decoration:none;transition:background .25s,border-color .25s;
+}
+.modal .box .head-row .go-link:hover{background:#262626;border-color:rgba(255,255,255,.28)}
+.modal .box .head-row .go-link svg{width:12px;height:12px;opacity:.7}
+
+/* 工具类 */
+.reveal{opacity:0;transform:translateY(20px);transition:opacity .8s,transform .8s}
+.reveal.show{opacity:1;transform:none}
+
+/* ==================== 移动端适配（≤768px）====================
+   导航汉堡 + 全局字号/边距收紧 + 各页单列堆叠 + 弹窗全屏 */
+@media (max-width: 768px) {
+  /* 导航：收起为汉堡按钮，点击展开抽屉式菜单 */
+  .nav{padding:0 16px;height:56px}
+  .nav .logo{font-size:16px}
+  .nav .logo small{display:none}
+  .nav .burger{display:flex}
+  .nav .menu{
+    position:fixed;top:56px;left:0;right:0;bottom:0;
+    flex-direction:column;gap:0;
+    background:rgba(10,10,10,.96);
+    backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+    transform:translateX(100%);transition:transform .3s ease;
+    padding:24px 0 40px;z-index:99;overflow-y:auto;
+  }
+  .nav.open .menu{transform:translateX(0)}
+  .nav .menu a{padding:18px 24px;font-size:18px;border-bottom:1px solid rgba(255,255,255,.06)}
+  .nav .menu a::after{display:none}
+
+  /* 全局：紧凑间距 + 字号按设备缩放（标题 48→30px 级，正文 15-18→13-15px） */
+  .slide{padding:64px 20px 40px}
+  /* P1 标题字号（方案 A 里细化，此处兜底） */
+  #p1 .title{font-size:38px;line-height:1.05}
+  #p1 .sub{font-size:15px}
+  /* P3 节点：单列堆叠 + 缩小字号 */
+  #p3{padding:64px 20px 40px}
+  #p3 .header{margin-bottom:24px;text-align:left}
+  #p3 .header h2{font-size:30px}
+  #p3 .grid{grid-template-columns:1fr;gap:12px}
+  #p3 .node{padding:18px 16px;min-height:auto}
+  #p3 .node h3{font-size:16px}
+  #p3 .node .desc{font-size:13px;line-height:1.7}
+  /* P2 联系：上下堆叠 + 形象图自适应（不超视口宽）+ 文案不截断 */
+  #p2{padding:64px 20px 40px}
+  #p2 .intro{grid-template-columns:1fr;gap:36px;max-width:100%}
+  #p2 .photo{max-width:320px;margin:0 auto}
+  #p2 .photo img{width:100%;max-width:100%}
+  #p2 .photo .deco{inset:-12px;border-radius:28px}
+  #p2 .name{font-size:38px}
+  #p2 .name span{font-size:20px;margin-left:10px;display:inline}
+  #p2 .focus{font-size:14px;margin-top:20px;line-height:1.8;max-width:100%}
+  #p2 .story{font-size:13.5px;line-height:1.85;max-width:100%}
+  #p2 .contact{grid-template-columns:repeat(3,1fr);gap:8px;max-width:100%}
+  #p2 .contact .item{padding:12px 10px}
+  #p2 .contact .value{font-size:12px;word-break:break-all}
+  /* P4 职业轨迹：标题居左（label 内边距对齐 20px）+ 手风琴纵排 */
+  #p4{padding:0}
+  #p4 .label{padding:64px 20px 28px}
+  #p4 .label h2{font-size:30px}
+  #p4 .label .sub{font-size:11px}
+  #p4 .accordion{flex-direction:column;width:100%;padding:0 20px 48px;gap:10px}
+  #p4 .panel{flex:none;width:100%;height:60px;border-radius:30px}
+  #p4 .panel.active{flex:none;width:100%;height:auto;min-height:0}
+  #p4 .panel.measuring{flex:none !important;width:100% !important;transition:none !important}
+  /* 胶囊竖排标签 → 移动端横排居中 */
+  #p4 .panel .label-strip{flex-direction:row;gap:12px;align-items:center;transform:translate(-50%,-50%)}
+  #p4 .panel .label-strip .co{writing-mode:horizontal-tb;text-orientation:mixed;height:auto;font-size:15px}
+  #p4 .panel .label-strip .ti{width:auto;height:auto}
+  #p4 .panel .label-strip .ti-text{position:static;transform:none}
+  /* 展开卡片：pill 与 body 收紧 */
+  #p4 .panel .pill{top:22px;left:22px;right:22px;gap:14px}
+  #p4 .panel .pill .company{font-size:19px}
+  #p4 .panel .body{padding:66px 22px 24px}
+  #p4 .panel .body .role{font-size:13.5px}
+  #p4 .panel .body .biz div{font-size:13px;line-height:1.7}
+  /* P5/P6：紧凑 + 字号缩放 */
+  #p5,#p6{padding:64px 20px 40px}
+  .exp .head h2{font-size:30px}
+  .exp .head .meta{gap:14px;font-size:13px}
+  .exp .layout{grid-template-columns:1fr;gap:36px}
+  .exp .cols{flex-direction:column;gap:14px}
+  .exp .col-title{font-size:11px;margin-bottom:14px}
+  .exp .list-item .h{font-size:13.5px}
+  .exp .list-item .desc{font-size:12.5px;line-height:1.7}
+  /* P7 项目案例：两段经历上下分开，不再硬塞两列 */
+  #p7{padding:64px 20px 40px}
+  #p7 .head{margin-bottom:32px}
+  #p7 .head h2{font-size:30px}
+  #p7 .cases{grid-template-columns:1fr;gap:20px}
+  #p7 .case{padding:24px 20px;gap:16px}
+  #p7 .case h3{font-size:20px}
+  #p7 .case .intro{font-size:13px}
+  #p7 .case .role{font-size:13px}
+  #p7 .case .achievements div{font-size:12.5px}
+  /* P8 作品：标题居左 + 缩小卡片，统一行高（与桌面端逻辑一致） */
+  #p8{padding:64px 0 40px}
+  #p8 .label{padding:0 20px 28px;text-align:left}
+  #p8 .label h2{font-size:30px}
+  #p8 .row{padding:0;height:150px}
+  #p8 .item{height:150px}
+  #p8 .item.sq{width:150px;height:150px}
+  #p8 .item.portrait{width:113px;height:150px}          /* 3:4 */
+  #p8 .item.landscape{width:200px;height:150px}          /* 4:3 */
+  #p8 .item.sixteen-nine{width:267px;height:150px}        /* 16:9 */
+  #p8 .item.three-two{width:225px;height:150px}            /* 3:2 */
+  /* P9 游戏经历：featured 两卡上下分两段 + hex 墙收窄 */
+  #p9{padding:64px 20px 40px}
+  #p9 .head{width:100%;margin-bottom:28px}
+  #p9 .head h2{font-size:30px}
+  #p9 .featured{width:100%;grid-template-columns:1fr;gap:16px;margin-bottom:40px}
+  #p9 .game .body h3{font-size:18px}
+  #p9 .game .body p{font-size:12.5px}
+  #p9 .wall{width:100%}
+  #p9 .hex{width:60px;height:68px}
+  #p9 .hex-row{gap:6px}
+  #p9 .hex-stack{gap:6px}
+  #p9 .hex .name{display:none}   /* hover 提示气泡：移动端无 hover，且绝对定位易溢出 */
+  /* 弹窗：全屏 + 减少 padding */
+  .modal{padding:0}
+  .modal .box{max-width:100%;width:100%;height:100%;max-height:100%;border-radius:0;padding:18px 16px 24px}
+  .modal.detail .box{padding:16px 14px 20px}
+  .modal .box .x{top:10px;right:14px}
+  .modal .box .title{font-size:16px;padding-right:36px}
+  .modal .box .preview{margin-top:14px}
+  /* 弹窗内的链接按钮（小屏字号略调小） */
+  .modal .box .head-row .go-link{padding:6px 14px;font-size:11px}
+}
+
+/* 注意：不设「平板」中间断点（769-1024）。参考 Pryzm 单断点策略，
+   只保留 ≤768px 一处，避免窄窗口桌面被误判为平板而改变全局 padding。 */
+
+/* P1 移动端（Pryzm 形态）：不做罗列、不做虚化背景 —— 保留桌面世界坐标画布，
+   由 JS 按 fitScale 等比缩小并居中展示画布局部（卡片清晰可辨，溢出视口的部分自然裁掉），
+   标题保持底部放置。JS 已禁拖拽/缩放（pointerdown/wheel 早退），这里只管视觉。 */
+@media (max-width: 768px) {
+  /* canvas/card 不覆盖任何布局：完全沿用桌面定位 + JS transform */
+  /* scrim 保留（桌面同款底部渐隐，保证标题可读性） */
+  /* 关键：桌面 stage 是 touch-action:none（拖拽画布用），移动端必须放开垂直滚动手势，
+     否则手指在画布区域上滑无法翻页 */
+  #p1 .stage{touch-action:pan-y !important}
+  #p1 .hello-wrap{padding:0 20px 44px !important}
+  #p1 .hello .l1{font-size:30px;font-weight:700;letter-spacing:.02em;line-height:1.16}
+  #p1 .hello .l2{font-size:14px;letter-spacing:.06em;margin-top:12px}
+  /* 桌面交互提示全部隐藏（触屏不可拖拽） */
+  #p1 .control-tip{display:none !important}
+  #p1 .tip{display:none !important}
+  #p1 .float-hint{display:none !important}
+}
+</style>
+</head>
+<body data-page-node-id="vZH8UxmmSZFgeeXAbTpkxj">
+
+<nav class="nav" data-page-node-id="9pAMwT7sDBLaKcBA9fxhGd">
+  <div class="logo" data-page-node-id="vv5NdPK0gSAHXlKOkxUph7">LeeFish<small data-page-node-id="QxCv6nbqwI7CKYoe3JqPle">李伟</small></div>
+  <button class="burger" id="nav-burger" type="button" aria-label="打开菜单" data-page-node-id="navBurger20260909">
+    <span data-page-node-id="navBurgerSpan1"></span><span data-page-node-id="navBurgerSpan2"></span><span data-page-node-id="navBurgerSpan3"></span>
+  </button>
+  <div class="menu" id="nav-menu" data-page-node-id="ZHW29lu2F1VN4HVlFdBvBR">
+    <a href="#p1" data-page-node-id="sdTaiKP3u6PR7yrDiwSFAC">欢迎</a>
+    <a href="#p4" data-page-node-id="sPJglvn4puo5DfKqF1n9HD">履历</a>
+    <a href="#p7" data-page-node-id="M2PMfawKL8OYIJurAj1DSZ">项目</a>
+    <a href="#p8" data-page-node-id="CLapPVBynHK2GxjaXNNG6f">作品</a>
+    <a href="#p2" data-page-node-id="hqDyLconaCrMfKKmzkHwE5">联系</a>
+  </div>
+</nav>
+
+<!-- ============ P1 欢迎首页 ============ -->
+<section class="slide" id="p1" data-page-node-id="UTcNtCqmBM1sX0LBluv8tn">
+  <div class="stage" id="stage" data-page-node-id="7hFdcTEPfDTzPed2JTBAWG">
+    <div class="canvas" id="canvas" data-page-node-id="flQPhyecd67GO7CyGDPJqV"></div>
+    <div class="scrim" data-page-node-id="aScR1mP1scR1m0000000001"></div>
+    <div class="control-tip" id="ctlTip" data-page-node-id="taQ4f3N050OiB4fzX9NUBw">拖动画布浏览作品<br>Ctrl+滚轮缩放画布</div>
+  </div>
+  <!-- 标题在 P1 文档流内（底部对齐）→ 滚动时 1:1 跟随，与滚动速度一致，滚出 P1 即离开视口 -->
+  <div class="hello-wrap" data-page-node-id="helloWrap0903">
+    <div class="hello" id="hello" data-page-node-id="hTEXB4YVgG3xqsBlD99oBP">
+      <div class="l1" data-page-node-id="chT4m8LhBDwo44Qv9Ll1V3">DISCOVER THE VALUE I DELIVER</div>
+      <div class="l2" data-page-node-id="bL2n0dEhELL0strangerX9">Game Content Marketing &amp; Ecosystem</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ P2 介绍页 ============ -->
+<section class="slide" id="p2" data-page-node-id="B7AslTRdpHczs4aRMSa91j">
+  <div class="intro" data-page-node-id="a0qlz8BOHC0VrhnLlC5IJu">
+    <div class="photo" data-page-node-id="bJV0XGCd1CBTgyg5DOkWBN">
+      <div class="deco" data-page-node-id="kGBr9q7NpB9ViPkrH5mETu"></div>
+      <img src="assets/liwei/avatar-2026.jpg" alt="李伟" data-page-node-id="e0Y2qK0y4fe1Mz0Fu5rDl4">
+    </div>
+    <div data-page-node-id="cIwkcJglsHub6w4l74p50N">
+      <h1 class="name" data-page-node-id="tcOxhjmBFSHGztJsFxInF0">李伟<span data-page-node-id="6s0uWlaFWSTADNatcrlL9S">Leefish</span></h1>
+      <div class="focus" data-page-node-id="TrSiScaNisYFgNfhRdAoQy">专注方向：<b data-page-node-id="5lACVd1D4D7vUpia9fgzyf">市场营销策划</b>｜<b data-page-node-id="ornaxuNRrwfnJEe0wmGsm5">内容生态孵化</b>｜<b data-page-node-id="zHIYKoHFR6PEnpskAQciCm">创作者管理</b></div>
+      <p class="story" data-page-node-id="AcB5GeAJwgy2xFAHpQYEyq">兼顾厂商+平台+创作者业务视角，深耕二次元/射击/动作品类游戏，拥有丰富的游戏行业平台&amp;机构&amp;达人合作资源，多段从零搭建生态业务经历，涉及《解限机》《崩坏：星穹铁道》《绝区零》等产品各周期生态，管理创作者规模超2千位，孵化多位垂类标杆创作者。</p>
+      <div class="contact" data-page-node-id="ILDX2JNVe4XBnbozfKyCmJ">
+        <div class="item" data-copy="13544509775" data-page-node-id="zHKNgBqFFPMPx5vEBiEqaR"><div class="label" data-page-node-id="DUqyLWZKKmm3smvFPN3wJu">TEL</div><div class="value" data-page-node-id="zjfGMuSfvlhonMKXlYKvqU">13544509775</div></div>
+        <div class="item wechat" data-copy="konata09" data-page-node-id="tryuFm9NAF8xlKSC8qLlRX"><div class="label" data-page-node-id="sJGVfcDd1dvGrDzAGflbKB">WECHAT</div><div class="value" data-page-node-id="WPdLSgiz2zskyHvqbxZhnH">konata09</div><div class="wechat-pop" data-page-node-id="wcp20260902"><img src="assets/liwei/wechat-qr.png" alt="微信二维码" data-page-node-id="wcpImg20260902"></div></div>
+        <div class="item" data-copy="Leefish1992@outlook.com" data-page-node-id="Wgaz6RAUKapZjVpVdgaE5E"><div class="label" data-page-node-id="UdCE8ODXPEGD7DMPocrM2X">MAIL</div><div class="value" data-page-node-id="CHtCE2Kznp7BRB3bRlMixJ">Leefish1992@outlook.com</div></div>
+      </div>
+    </div>
+  </div>
+  <div class="copy-toast" id="toast" data-page-node-id="tHBwH6zFI5bbTlVBBZoXlg">已复制</div>
+</section>
+
+<!-- ============ P3 核心价值交付 ============ -->
+<section class="slide" id="p3" data-page-node-id="ZoYHbnCs8BiahDQT3Frn1c">
+  <div class="header reveal" data-page-node-id="6ZYEJDEPGB5dznfG5qz0YC">
+    <div class="eyebrow" data-page-node-id="8cI6aipUteFNdau4W98y5K">CORE VALUE‑DELIVERIES</div>
+    <h2 data-page-node-id="zdAemPEpGX4b4W2W8ng0JC">核心价值交付</h2>
+  </div>
+  <div class="grid" data-page-node-id="1HenKmnxDre3aqEKQsuBMF">
+    <div class="node reveal" data-page-node-id="JWBIERKgYKdy9VfmpnL7dk"><div class="idx" data-page-node-id="bWOkfuVMYLhQ67hTLZFm2A">01</div><h3 data-page-node-id="VO49fVkDugANKdpq0YBlOs">全周期生态搭建经验</h3><div class="desc" data-page-node-id="OEmOunPIvKaW9993f6F1lP">《解限机》《崩坏：星穹铁道》《绝区零》《鸣潮》等游戏内容生态搭建经验，覆盖测试孵化、上线爆发至长线运营等周期。</div><div class="num" data-page-node-id="SHxW6EKakhawelo7d1Attq">/ ECOSYSTEM</div></div>
+    <div class="node reveal" data-page-node-id="o9bVcvIrpcmTROzxPx5BJW"><div class="idx" data-page-node-id="98aKBA4OFT53LmaqESAcIS">02</div><h3 data-page-node-id="4r0oitnnhySdc0AA1nZ9XZ">多业务视角操盘能力</h3><div class="desc" data-page-node-id="FvpAugHHHNuTDoCbICOQnQ">精通抖音/B站/虎牙/斗鱼生态机制，统筹厂商/平台/机构/达人/作者等多方资源协同，具备独立统筹平台运营策略规划及内容落地能力。</div><div class="num" data-page-node-id="3yOExTyI1jRbDwM3WE2yD4">/ PERSPECTIVE</div></div>
+    <div class="node reveal" data-page-node-id="CEoyfcPA670H0YaXvlgJaZ"><div class="idx" data-page-node-id="JhmPYlty9pgGUaf7FeA77o">03</div><h3 data-page-node-id="akJDq80EAMmZzTvLpef8nd">从零搭建作者体系</h3><div class="desc" data-page-node-id="zVnYA01EdLBpr5AGUD2Cy7">从零搭建作者准入/成长阶梯/权益激励体系，创作者招募/培训选拔/签约转化/标杆孵化等链路落地包办，超预期达成业务交付。</div><div class="num" data-page-node-id="Zu4pNLRH2nXZFHZ4oDkCiO">/ SYSTEM</div></div>
+    <div class="node reveal" data-page-node-id="pUB6UddUDcbSpSzWXRZFPp"><div class="idx" data-page-node-id="XK3N8pbcydfvjBSMFU0WS1">04</div><h3 data-page-node-id="RhShOGVULvFimlbfXaZAXW">兴趣创业&内容创作者</h3><div class="desc" data-page-node-id="2a9kHMqwNKh1jAmzKUhatG">精通平面设计/视频拍摄/剪辑后期等创作硬技能，拥有账号孵化、兴趣创业、游戏制作等经验成果。</div><div class="num" data-page-node-id="4A701FoVDTGteAwzxW0o5F">/ CREATION</div></div>
+    <div class="node reveal" data-page-node-id="9yAI5WWU9ItjLP9Lf9dLAo"><div class="idx" data-page-node-id="dBw9HzBOErGdEL0fEXgu2E">05</div><h3 data-page-node-id="BKERFMYvStqj5PuX0gBvDo">AI 工具赋能业务</h3><div class="desc" data-page-node-id="ojlFOEGXNmPa41LcPC8vqT">AI 工具应用提效实践，擅长运用 AIGC & Vibe Coding 助力内容创作生产、数据爬取分析及工具插件开发。</div><div class="num" data-page-node-id="brYxdYdKt3bnCrFJWDrSMm">/ AI NATIVE</div></div>
+  </div>
+</section>
+
+<!-- ============ P4 职业轨迹 ============ -->
+<section class="slide" id="p4" data-page-node-id="JEEikEBeK2C1z9IjQ54bMs">
+  <div class="label" data-page-node-id="g9h4CwWdJBBpIvVFKN885V">
+    <h2 data-page-node-id="LkYSVYJ5Apx6Rto6Q3z3Gx">职业轨迹</h2>
+    <div class="sub" data-page-node-id="SsMcY7bxJgXo1tRh98z79A">CAREER · 2018 → 2026</div>
+  </div>
+  <div class="accordion" id="acc" data-page-node-id="kQxDiFKx8I2ZDRmjczpMwY">
+    <div class="panel" data-i="0" data-page-node-id="wJyA7YH2ieIweveSHp4fNe">
+      <div class="label-strip" data-page-node-id="mra5TS62UiscKz6Ch16zWy"><span class="co" data-page-node-id="mra5TS62UiscKz6Ch16zWy-co">网易</span><span class="ti" data-page-node-id="mra5TS62UiscKz6Ch16zWy-ti"><span class="ti-text">2018.01—2020.02</span></span></div>
+      <div class="pill" data-page-node-id="XkJGNYtPnoBSDI1cTjYEc3"><div class="company" data-page-node-id="oqVTRNk7VU1QpZiDXwmfPE">网易</div><div class="time" data-page-node-id="VKJP1DU24IHoVKXW7JpJZK">2018.01 — 2020.02</div></div>
+      <div class="body" data-page-node-id="jEFWwyZ35oLVHc1x5HwgSQ">
+        <div class="role" data-page-node-id="J46M4AuMWXqTHGB3QK0LcS"><b data-page-node-id="BoNHAr3tS0pmVkrxQZWzrV">KM 知识管理平台</b> · 平台内容运营</div>
+        <div class="biz" data-page-node-id="vrA54dMTVzRUzby6lnTzwE">
+          <div data-page-node-id="Wq6JT7kno6dTOyvWTeGGoD">PUGC 栏目全流程统筹</div>
+          <div data-page-node-id="e6fRE9nRa7DXy1ENUxW6af">UGC 用户社群搭建管理</div>
+        </div>
+      </div>
+    </div>
+    <div class="panel" data-i="1" data-page-node-id="yj8GxLO9wr7oS1VIseTsl6">
+      <div class="label-strip" data-page-node-id="YXYJDAfXv9YZTFLCsoBQwg"><span class="co" data-page-node-id="YXYJDAfXv9YZTFLCsoBQwg-co">雷猴</span><span class="ti" data-page-node-id="YXYJDAfXv9YZTFLCsoBQwg-ti"><span class="ti-text">2020.03—2020.11</span></span></div>
+      <div class="pill" data-page-node-id="4QICM6PBRVa9H8OlNs8G6z"><div class="company" data-page-node-id="tNIP2Eg8YpiZV1QnbmYlpM">雷猴</div><div class="time" data-page-node-id="GwC6pDc4k45oltclfN3522">2020.03 — 2020.11</div></div>
+      <div class="body" data-page-node-id="TIxSb01nxNG3JcePC0kZ0D">
+        <div class="role" data-page-node-id="Syob8C1stHGgB9TXLrxHiO"><b data-page-node-id="CVUzlQXwPMycCQPqPs6TMD">OOLA 环保回收 APP</b> · 产品&内容运营主管</div>
+        <div class="biz" data-page-node-id="UtKIoVGPznKld1Bz7ODvZd">
+          <div data-page-node-id="l8az9mgqqeg5WqLuJyHyMm">品牌整合营销策划</div>
+          <div data-page-node-id="IdX8SyQwI9Zb4wnI4jKJGH">社媒矩阵运营管理</div>
+          <div data-page-node-id="OtwFfEX81gbf2kS2B31luD">产品功能策划设计</div>
+        </div>
+      </div>
+    </div>
+    <div class="panel" data-i="2" data-page-node-id="yw2mWwKOd1ab3GHGBr4DyE">
+      <div class="label-strip" data-page-node-id="PyfhITEENCcveJehBzqDGy"><span class="co" data-page-node-id="PyfhITEENCcveJehBzqDGy-co">虎牙</span><span class="ti" data-page-node-id="PyfhITEENCcveJehBzqDGy-ti"><span class="ti-text">2020.11—2025.02</span></span></div>
+      <div class="pill" data-page-node-id="guX5o47jY1AECETXdGXmP0"><div class="company" data-page-node-id="dxpb04C3k0qeEvUbqnEZHA">虎牙</div><div class="time" data-page-node-id="H0oj7kJfzVCXYrBdxdORn7">2020.11 — 2025.02</div></div>
+      <div class="body" data-page-node-id="6whGWGfbMgAW730hSmgn8j">
+        <div class="role" data-page-node-id="P9FAKtrbG5fuhkF8LHCrat"><b data-page-node-id="iraQdg16tHcsL9SjP8blQp">《崩坏：星穹铁道》《绝区零》《鸣潮》等</b> · 高级直播内容运营</div>
+        <div class="biz" data-page-node-id="ppeXe9hARGGp3ZQf9RW1pv">
+          <div data-page-node-id="352qlF4GgR1Y97pK225RN4">二游厂商生态合作资源引入</div>
+          <div data-page-node-id="xPvQFTfgEB7fh3Li93LwCs">从零构建新游/二游品类生态</div>
+          <div data-page-node-id="CKUYPdGiEPfSGH3bhGpINw">PUGC 直播栏目内容策划营销</div>
+          <div data-page-node-id="zmDq2GXsOpmRllQvlea2LG">平台主播管理&标杆孵化能手</div>
+          <div data-page-node-id="hw5iJIB6o1hzPEoUQ5Ub1R">主导搭建直播切片分发链路</div>
+        </div>
+      </div>
+    </div>
+    <div class="panel active" data-i="3" data-page-node-id="Z1MEduPQTr3jsiEG87LT9v">
+      <div class="label-strip" data-page-node-id="PwHIMRe10A7vhkWdpb8zK4"><span class="co" data-page-node-id="PwHIMRe10A7vhkWdpb8zK4-co">西山居</span><span class="ti" data-page-node-id="PwHIMRe10A7vhkWdpb8zK4-ti"><span class="ti-text">2025.02—2026.08</span></span></div>
+      <div class="pill" data-page-node-id="5nAEcnhiHAfbCzDF8SY4wS"><div class="company" data-page-node-id="FgkV9tvSJC9w32qIK6zCCU">西山居</div><div class="time" data-page-node-id="Tj8GLkGuq14AWvCwRm1fdt">2025.02 — 2026.08</div></div>
+      <div class="body" data-page-node-id="9I54xjDqdG76NymqDWIltN">
+        <div class="role" data-page-node-id="eyxhZY3fqpKpfuARK1lKJu"><b data-page-node-id="C8Jy0PBC3bVA54EYy2i43k">《解限机》</b> · 资深内容生态运营</div>
+        <div class="biz" data-page-node-id="ZupsnxfhHKv6jcCEpPHNlU">
+          <div data-page-node-id="EBeHJsqpFlsr4TCTESOYGr">抖音/B站平台生态策略建设</div>
+          <div data-page-node-id="7s8CxXuLTXpnbQkxkBpyEr">从零搭建创作者管理体系</div>
+          <div data-page-node-id="GE2mEKDv5brq6YR7QI9UXz">内容营销策划及范式沉淀</div>
+          <div data-page-node-id="kokPKIZfSPyy8q45N1ZP6O">机构与达人生态合作管理</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ P5 核心履历 · 西山居 ============ -->
+<section class="slide exp" id="p5" data-page-node-id="Q79ApkN9tSbHsJTnq8y4hq">
+  <div class="head" data-page-node-id="WQQDoh613LRQyxbAhXFAlE">
+    <div class="eyebrow" data-page-node-id="p5eyebrow20260905">KEY PROFILE</div>
+    <h2 data-page-node-id="wLcMKhVo6CjLeXHTwPwNHO">西山居 · 《解限机》</h2>
+    <div class="meta" data-page-node-id="fnuwsCqUqHHkHHDu0Zm4rH"><span data-page-node-id="PM7XgbPgN234h4JvqB5yFS"><b data-page-node-id="8ftpDJqQRwMxybDhF2A0uB">资深内容生态运营</b></span><span data-page-node-id="G0oG17bqx97w0wNOFK0Vuy">2025.02 — 2026.08</span></div>
+  </div>
+  <div class="layout" data-page-node-id="PYtQfHucEMlpOkOnt4ye8x">
+    <div class="col-list" data-page-node-id="0T1PhcShWJTZ5VH4qZgx6q">
+      <div class="col-title" data-page-node-id="p5dutytl01">岗位职责 · 5</div>
+      <div class="list-item" data-page-node-id="p5li01">
+        <div class="h" data-page-node-id="p5li01h">平台运营策略与生态建设</div>
+        <div class="desc" data-page-node-id="p5li01d">负责抖音、B站、斗鱼、虎牙等多平台商务合作对接与生态构建，基于各平台流量机制与用户画像差异，整合平台曝光资源，制定各平台差异化视频+直播供给策略，适配产品阶段规划内容赛道及事件，助力项目破圈传播、内容供给及消费良性循环；</div>
+      </div>
+      <div class="list-item" data-page-node-id="p5li02">
+        <div class="h" data-page-node-id="p5li02h">创作者体系搭建与管理</div>
+        <div class="desc" data-page-node-id="p5li02d">0-1 搭建创作者分层准入标准、等级成长阶梯及权益激励机制，建立创作者社群提供创作引导、培训支持与加热助推，低成本独家签约沉淀官方创作者矩阵，快速推动创作者规模增长及创作供给，助力创作者量级跃迁成长；</div>
+      </div>
+      <div class="list-item" data-page-node-id="p5li03">
+        <div class="h" data-page-node-id="p5li03h">内容赛道孵化与营销事件策划</div>
+        <div class="desc" data-page-node-id="p5li03d">洞察射击/动作品类特性及用户内容消费喜好，规划视频、直播、赛事、二创主题创作赛道及内容，响应版本/节点宣发需求策划并推动营销事件传播落地，分析各平台数据趋势及转化效果，打磨高转化内容范式，驱动玩家拉新与留存；</div>
+      </div>
+      <div class="list-item" data-page-node-id="p5li04">
+        <div class="h" data-page-node-id="p5li04h">MCN 机构生态合作</div>
+        <div class="desc" data-page-node-id="p5li04d">梳理节点宣发需求及投放策略，推动 MCN 机构响应支持内容供给及分发，对 CPM、CPT 等投放成本管控负责，协同机构进行内容数据监控、效果复盘及策略迭代，优化内容投放效果；</div>
+      </div>
+      <div class="list-item" data-page-node-id="p5li05">
+        <div class="h" data-page-node-id="p5li05h">KOL 达人采买合作管理</div>
+        <div class="desc" data-page-node-id="p5li05d">推进预算分配、达人筛选评估、合作策略制定、执行落地及投放优化，维系合作达人矩阵，与众多品类达人保持良好合作关系。</div>
+      </div>
+    </div>
+    <div class="col-list" data-page-node-id="hkA6JtumnsTIF5nMSNN56X">
+      <div class="col-title" data-page-node-id="p5dutytl02">关键成果 · 4</div>
+      <div class="ach-item" data-page-node-id="p5ac01"><span class="dot" data-page-node-id="p5ac01d"></span><div class="txt" data-page-node-id="p5ac01t">测试期在抖音斩获 <b data-page-node-id="p5ac01b">2 个热搜词条</b>（最高 <b data-page-node-id="p5ac01b2">TOP1</b>），新游期待榜预约 <b data-page-node-id="p5ac01b3">TOP1</b></div></div>
+      <div class="ach-item" data-page-node-id="p5ac02"><span class="dot" data-page-node-id="p5ac02d"></span><div class="txt" data-page-node-id="p5ac02t">公测内容消费规模超 <b data-page-node-id="p5ac02b">8 亿</b>，视频供稿近 <b data-page-node-id="p5ac02b2">13 万</b>，日均开播近 <b data-page-node-id="p5ac02b3">3000</b></div></div>
+      <div class="ach-item" data-page-node-id="p5ac03"><span class="dot" data-page-node-id="p5ac03d"></span><div class="txt" data-page-node-id="p5ac03t">招募创作者规模超 <b data-page-node-id="p5ac03b">1200 位</b>，<b data-page-node-id="p5ac03b2">0 成本</b>独家签约 <b data-page-node-id="p5ac03b3">200+ 位</b>优质作者</div></div>
+      <div class="ach-item" data-page-node-id="p5ac04"><span class="dot" data-page-node-id="p5ac04d"></span><div class="txt" data-page-node-id="p5ac04t">与 <b data-page-node-id="p5ac04b">寅子/女流/姿态</b>等头部 KOL 达人合作孵化内容案例</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ P6 核心履历 · 虎牙 ============ -->
+<section class="slide exp" id="p6" data-page-node-id="lHoFCsiYCaQuM7iThWh4uN">
+  <div class="head" data-page-node-id="moYweHRvZDWwmaHapP0vjC">
+    <div class="eyebrow" data-page-node-id="p6eyebrow20260905">KEY PROFILE</div>
+    <h2 data-page-node-id="F2VLiBP1yZ79DOm4Q3dADf">虎牙直播 · 新游&amp;二次元游戏方向</h2>
+    <div class="meta" data-page-node-id="LsPFFBBxXnCEgIbDNB9Dmz"><span data-page-node-id="zv0bzZ9GsvovBLKr57cCk4"><b data-page-node-id="rBbiGQb5aEomnK30HM8Uo8">高级直播内容运营</b></span><span data-page-node-id="gtz48UuLJiB6HMqneFEwbB">2020.11 — 2025.02</span></div>
+  </div>
+  <div class="layout" data-page-node-id="mGW5qKCxul2zPvWhZaP5hp">
+    <div class="col-list" data-page-node-id="YNg1mpjN55aTebUjO43eFr">
+      <div class="col-title" data-page-node-id="p6dutytl01">岗位职责 · 5</div>
+      <div class="list-item" data-page-node-id="p6li01">
+        <div class="h" data-page-node-id="p6li01h">厂商商务合作与资源引入</div>
+        <div class="desc" data-page-node-id="p6li01d">拓展米哈游、腾讯、库洛、完美世界等厂商资源，介入游戏前期生态并促成深度合作，配合厂商节点宣发需求，输出生态规划、资源政策支持、机构/创作者资源储备，为游戏曝光宣推、内容供给及预约转化效果提供支撑，提升虎牙二次元游戏品类业务的行业影响力；</div>
+      </div>
+      <div class="list-item" data-page-node-id="p6li02">
+        <div class="h" data-page-node-id="p6li02h">新游&二次元板块生态构建</div>
+        <div class="desc" data-page-node-id="p6li02d">独立负责《崩坏：星穹铁道》《绝区零》《原神》《鸣潮》《晶核》等多款重点游戏品类生态策略，涵盖品类资源政策、创作激励设计、公会合作引入、创作者招募、用户转化引导等全链路规划，对品类有效互动市占规模、内容供给及消费活力负责；</div>
+      </div>
+      <div class="list-item" data-page-node-id="p6li03">
+        <div class="h" data-page-node-id="p6li03h">主播培养孵化及签约转化</div>
+        <div class="desc" data-page-node-id="p6li03d">统筹新游&二次元游戏板块主播规模增长及标杆孵化，牵头搭建"直播+视频双栖"创作者模式，提供人设包装、创作规划、事件策划、内容制作等全链路运营服务支持，提升板块创作者增长、留存粘性、签约转化及标杆孵化；</div>
+      </div>
+      <div class="list-item" data-page-node-id="p6li04">
+        <div class="h" data-page-node-id="p6li04h">PUGC 栏目内容营销策划与创意执行</div>
+        <div class="desc" data-page-node-id="p6li04d">负责《超级游戏人》《新游先锋大乱斗》《一竞到底》等多档官方直播栏目内容策划及执行落地，带动品类创作者孵化《开拓者主播新春盛会》《欧皇追金挑战赛》《角色核爆挑战赛》等自制赛事活动，撬动平台与厂商资源投放，推动直播内容差异化供给；</div>
+      </div>
+      <div class="list-item" data-page-node-id="p6li05">
+        <div class="h" data-page-node-id="p6li05h">搭建虎牙直播切片分发链路</div>
+        <div class="desc" data-page-node-id="p6li05d">构建直播企划、切片剪辑、内容分发、渠道加热的虎牙直播切片分发流程，拉动厂商与机构资源协同，通过抖音、快手、B站等站外渠道进行视频分发，提升虎牙直播切片传播度、激励优质创作者直播和视频供给，补齐虎牙平台视频内容生态。</div>
+      </div>
+    </div>
+    <div class="col-list" data-page-node-id="Htq0p8gTWmFxUYZBlInbeP">
+      <div class="col-title" data-page-node-id="p6dutytl02">关键成果 · 4</div>
+      <div class="ach-item" data-page-node-id="p6ac01"><span class="dot" data-page-node-id="p6ac01d"></span><div class="txt" data-page-node-id="p6ac01t">促成平台与米哈游/腾讯/库洛等厂商生态激励量级累计超 <b data-page-node-id="p6ac01b">1500 万+</b></div></div>
+      <div class="ach-item" data-page-node-id="p6ac02"><span class="dot" data-page-node-id="p6ac02d"></span><div class="txt" data-page-node-id="p6ac02t">崩铁/晶核/时空猎人3 互动市占稳居行业 <b data-page-node-id="p6ac02b">TOP1-2</b>（20%-30%），有效开播率 <b data-page-node-id="p6ac02b2">96%-98%</b> 行业 TOP1</div></div>
+      <div class="ach-item" data-page-node-id="p6ac03"><span class="dot" data-page-node-id="p6ac03d"></span><div class="txt" data-page-node-id="p6ac03t">独家签约创作者 <b data-page-node-id="p6ac03b">400+</b>，孵化高大萌/蛮牛（场均 ACU <b data-page-node-id="p6ac03b2">1000+</b>，抖音播放 <b data-page-node-id="p6ac03b3">5000 万+</b>）</div></div>
+      <div class="ach-item" data-page-node-id="p6ac04"><span class="dot" data-page-node-id="p6ac04d"></span><div class="txt" data-page-node-id="p6ac04t"><b data-page-node-id="p6ac04b">0 成本</b>冷启「HNG 游戏说」账号，单月播放 <b data-page-node-id="p6ac04b2">50 万+</b></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ P7 项目案例 ============ -->
+<section class="slide" id="p7" data-page-node-id="r1znnclSCmbkhFOIAZQwO3">
+  <div class="head" data-page-node-id="JKrlDF418nxdncwtUNBI4L">
+    <h2 data-page-node-id="9ERkEr6gRpap7AiMyICLHD">项目案例</h2>
+    <div class="sub" data-page-node-id="347H0UW1PNkvsisDfL3smm">Showcase of Project Cases</div>
+  </div>
+  <div class="cases" data-page-node-id="BWpY23Zljn3wcdcttEjIng">
+    <div class="case" data-page-node-id="adirGZGdB7MaAqc5hA4TfX">
+      <h3 data-page-node-id="mbeRQAVxiNC6cVEIAOVeXp">解限机「王牌计划」创作者体系搭建</h3>
+      <div class="intro" data-page-node-id="deAeZCO3x90NH6Tbeyrkyy">"王牌计划"是面对所有《解限机》内容创作者的官方激励项目，该项目将会为以视频、直播、同人、赛事为创作主题的创作者们提供丰厚的官方奖励与创作支持，共建《解限机》的内容创作生态。</div>
+      <div class="role" data-page-node-id="6Getll0l8gkPJHjZsxA9dt">从零搭建创作者管理体系，规划创作类型赛道及内容范式标准，提供创作引导及培训支持，在产品上线前超预期完成创作者生态储备，招募储备 1100+ 位创作者，零成本签约认证 200+ 位创作者，并成功孵化多位标杆作者案例：</div>
+      <div class="sub-grid" data-page-node-id="fdadHUQbJ2HjLorWMrVQod">
+        <div class="sub-card" data-page-node-id="770Ohm25dRfdvfY3ealvyQ"><div class="name" data-page-node-id="KmI1fkbOJ4BkTgH0zLlPQk">狙之千里</div><div class="info" data-page-node-id="vIglPn1H4TRtttK4xIyWm8">搭建玩家陪玩社群，规模超 2000+ 人</div></div>
+        <div class="sub-card" data-page-node-id="clip1hU1olrkNDEOuLEGyx"><div class="name" data-page-node-id="cYUXvMmDftEyFWrfyDtF5S">野人藤</div><div class="info" data-page-node-id="NO5uMByWpOgK4umW922aex">孵化「龙渊老祖」IP，树立作者标杆</div></div>
+        <div class="sub-card" data-page-node-id="lTOrIBaNmHjW5Ko9jqZf75"><div class="name" data-page-node-id="h2El8K8wMIgu2sKT7Belxs">老布</div><div class="info" data-page-node-id="qHIjdcSjqN8eh0ekHtUWrk">拓展世界观解析赛道，主题视频播放峰值超 500 万</div></div>
+        <div class="sub-card" data-page-node-id="O1PBX4fcPIOZpxTVh2RcVz"><div class="name" data-page-node-id="RLrdFHxwWftt8chLSVddnw">欧姆蛋</div><div class="info" data-page-node-id="7uAGdTxCH9oZ05YSvcVlHB">拓展沉浸外设赛道，主题直播场均 PCU 达 4000+</div></div>
+      </div>
+      <div class="go" data-page-node-id="XvHlhoL7CtlvunRgCJsaCv"><a href="https://mechabreak.seasungames.cn/zt/projectace/" target="_blank" rel="noopener" data-page-node-id="paCAVFWGnETWeV0eqVrixX">前往项目</a></div>
+    </div>
+    <div class="case" data-page-node-id="RyO3jwIlThiDL7U5SXp0HC">
+      <h3 data-page-node-id="B7PENF7FNAURCMU9u39rjj">虎牙二次元游戏直播生态构建</h3>
+      <div class="intro" data-page-node-id="cfvN9Y06Dyl8CCfYrPPLbR">虎牙二次元游戏生态孵化专项，通过搭建品类生态，稳定提供直播内容供给，满足平台用户内容消费需求，抢占二游市场份额。</div>
+      <div class="role" data-page-node-id="wudz3KSqP97BwoYEfKVQtD">参与虎牙二次元游戏直播专项业务拓展，盘点平台大盘数据及品类生态状况，独立负责多款重点游戏品类各阶段生态策略制定及内容运营全链路：</div>
+      <div class="timeline" data-page-node-id="YjmsjRKoPytMKUW0guw4Cq">
+        <div class="stage" data-page-node-id="6xpkLQ1juWi1UhE5bcDli3"><div class="phase" data-page-node-id="PC05yUgQdbPcAJWC73tlLy">测试期</div><div class="txt" data-page-node-id="3RrEDOVZoVYYEQf6ehhjGF">主播战队夺《先驱者主播邀请赛》冠军，预约&测试激活近 8 万</div></div>
+        <div class="stage" data-page-node-id="HvK29SCGRSfvjNiPFybeAg"><div class="phase" data-page-node-id="uvEZbriRvHniIH0NtFKdAf">公测期</div><div class="txt" data-page-node-id="CXQAjVUcZ5xki6Qr6c5yWi">《鸣潮》UZI/Letme 直播事件，专区 DAU 破 500 万，拓展示 B 站商业化内容合作形式</div></div>
+        <div class="stage" data-page-node-id="3QyUGttBdH4K1CQTsn6mIZ"><div class="phase" data-page-node-id="D92lgIBsaN10MBVs9aY5N2">长线期</div><div class="txt" data-page-node-id="AqbZvCSJKvdsGglfWYqdB3">崩铁日均开播 1 万，《开拓者主播新春盛会》DAU 破 160 万获厂商认可</div></div>
+      </div>
+      <div class="go" data-page-node-id="sMPMo6EeBfQr1wbBGeGv2A"><a href="https://www.huya.com/g/10009" target="_blank" rel="noopener" data-page-node-id="aM33US1bVwq6Ge1kHR0mi7">前往项目</a></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ P8 作品展示 ============ -->
+<section class="slide" id="p8" data-page-node-id="V90Dlcpp0IGuixCDFVweB5">
+  <div class="label" data-page-node-id="thW3Y6BGbSXtvOI2NMmG0z">
+    <h2 data-page-node-id="fzhRLY2ZFNStx5ysZs0Ljn">作品展示</h2>
+    <div class="sub" data-page-node-id="xHPu6pDXiKGNsU9OwzOdua">Portfolio: Graphics, Videos, Tools</div>
+  </div>
+  <div class="rows" data-page-node-id="OssZNZVI6ohoSTNLOby6zK">
+    <div class="row r1" data-page-node-id="fLQZE3avfCKWRdDEzKZ3qY">
+      <div class="track" data-page-node-id="tr1">
+      <!-- 7 个（R1-02/05/07 删除占位；保留 sq01 + 3 个 portrait + 3 个 landscape） -->
+      <div class="item sq" data-slot="R1-01" data-title="GAMEJAM作品《群主模拟器》" data-meta="1 × 1" data-cover="assets/p1/17-gamejam-group-master.jpg" data-detail="assets/p8/img02.jpg assets/p8/img03.jpg" data-page-node-id="p8r101"><div class="ph">01</div></div>
+      <div class="item portrait accent" data-slot="R1-03" data-title="OC角色孵化-萨帕" data-meta="3 × 4" data-cover="assets/p1/02-sapa-oc.jpg" data-detail="assets/p8/img05.jpg" data-page-node-id="p8r103"><div class="ph">03</div></div>
+      <div class="item landscape" data-slot="R1-04" data-title="《新游先锋大乱斗》栏目制作" data-meta="4 × 3" data-cover="assets/p1/04-xinyou-live.jpg" data-detail="assets/p8/img11.jpg" data-link="https://www.huya.com/search?hsk=%E6%96%B0%E6%B8%B8%E5%85%88%E9%94%8B%E5%A4%A7%E4%B9%B1%E6%96%97" data-page-node-id="p8r104"><div class="ph">04</div></div>
+      <div class="item portrait" data-slot="R1-06" data-title="数码板绘-少女&amp;枪" data-meta="3 × 4" data-cover="assets/p1/03-digital-paint.jpg" data-detail="assets/p8/img07.jpg" data-page-node-id="p8r106"><div class="ph">06</div></div>
+      <div class="item landscape accent" data-slot="R1-08" data-title="《萨帕的五一》AI短片" data-meta="4 × 3" data-cover="assets/p1/09-sapa-mayday.jpg" data-detail="assets/p8/img13.jpg" data-link="https://v.douyin.com/vR1MvkVpMTc/" data-page-node-id="p8r108"><div class="ph">08</div></div>
+      <div class="item portrait" data-slot="R1-09" data-title="城市摄影-东京塔" data-meta="3 × 4" data-cover="assets/p1/06-tokyo-tower-2024.jpg" data-detail="assets/p8/img09.jpg" data-page-node-id="p8r109"><div class="ph">09</div></div>
+      <div class="item landscape" data-slot="R1-10" data-title="《王牌计划》创作者计划" data-meta="4 × 3" data-cover="assets/p1/10-aceplan.jpg" data-detail="assets/p8/img15.jpg" data-link="https://mechabreak.seasungames.cn/zt/projectace/index.html#/" data-page-node-id="p8r110"><div class="ph">10</div></div>
+      </div>
+    </div>
+    <div class="row r2" data-page-node-id="qRwhTwvzzgBw6D7BOxreAF">
+      <div class="track" data-page-node-id="tr2">
+      <!-- 6 个（R2-03/05/07/10 删除占位；3 个 portrait + 1 个 16:9 accent + 2 个 landscape） -->
+      <div class="item portrait" data-slot="R2-01" data-title="《崩坏：星穹铁道》标杆孵化企划" data-meta="3 × 4" data-cover="assets/p1/07-hsr-kv-2023.jpg" data-detail="assets/p8/img17.jpg" data-link="https://www.huya.com/search?hsk=%E6%98%9F%E7%A9%B9%E9%93%81%E9%81%93" data-page-node-id="p8r201"><div class="ph">01</div></div>
+      <div class="item sixteen-nine accent" data-slot="R2-02" data-title="腾讯公益企划《解锁闲置物二次生命》" data-meta="16 : 9" data-cover="assets/p1/11-gongyi-event.jpg" data-detail="assets/p8/img23.jpg" data-link="https://mp.weixin.qq.com/s/H9JQ2CbJ72uobtQDBVOZuA" data-page-node-id="p8r202"><div class="ph">02</div></div>
+      <div class="item portrait" data-slot="R2-04" data-title="NOWATER原创徽章" data-meta="3 × 4" data-cover="assets/p1/08-nowater-badge.jpg" data-detail="assets/p8/img19.jpg" data-page-node-id="p8r204"><div class="ph">04</div></div>
+      <div class="item landscape" data-slot="R2-06" data-title="《游戏玩法酷》栏目制作" data-meta="4 × 3" data-cover="assets/p1/13-gameplay-cool-video.jpg" data-detail="assets/p8/img25.jpg" data-page-node-id="p8r206"><div class="ph">06</div></div>
+      <div class="item portrait" data-slot="R2-08" data-title="漫涂x农行电商企划" data-meta="3 × 4" data-cover="assets/p8/img20.jpg" data-detail="assets/p8/img21.jpg" data-page-node-id="p8r208"><div class="ph">08</div></div>
+      <div class="item landscape" data-slot="R2-09" data-title="《游戏无国界》栏目制作" data-meta="4 × 3" data-cover="assets/p1/14-game-no-borders.jpg" data-detail="assets/p8/img27.jpg" data-page-node-id="p8r209"><div class="ph">09</div></div>
+      </div>
+    </div>
+    <div class="row r3" data-page-node-id="oKNl0CdUDVgIF02QUkcPdo">
+      <div class="track" data-page-node-id="tr3">
+      <!-- 6 个（R3-04/06/09 删除占位；1 个 sq + 2 个 portrait + 1 个 3:2 accent + 2 个 landscape） -->
+      <div class="item sq" data-slot="R3-01" data-title="素描手绘" data-meta="1 × 1" data-cover="assets/p1/01-sketch-paint.jpg" data-detail="assets/p8/img29.jpg" data-page-node-id="p8r301"><div class="ph">01</div></div>
+      <div class="item three-two accent" data-slot="R3-02" data-title="抖音创作者大会×解限机" data-meta="3 : 2" data-cover="assets/p1/15-expo-dy-mecha.jpg" data-detail="assets/p8/img35.jpg" data-page-node-id="p8r302"><div class="ph">02</div></div>
+      <div class="item portrait" data-slot="R3-03" data-title="人像摄影-JK少女" data-meta="3 × 4" data-cover="assets/p1/12-jk-girl-2020.jpg" data-detail="assets/p8/img31.jpg" data-page-node-id="p8r303"><div class="ph">03</div></div>
+      <div class="item portrait accent" data-slot="R3-05" data-title="城市摄影-彩虹大桥" data-meta="3 × 4" data-cover="assets/p8/img32.jpg" data-detail="assets/p8/img33.jpg" data-page-node-id="p8r305"><div class="ph">05</div></div>
+      <div class="item landscape" data-slot="R3-07" data-title="网易喵菌形象设计" data-meta="4 × 3" data-cover="assets/p1/16-netease-meow.jpg" data-detail="assets/p8/img37.jpg" data-page-node-id="p8r307"><div class="ph">07</div></div>
+      <div class="item landscape accent" data-slot="R3-10" data-title="AIGC企划-FÉNIX女团" data-meta="4 × 3" data-cover="assets/p1/18-fenix-girl-group.jpg" data-detail="assets/p8/img39.jpg" data-page-node-id="p8r310"><div class="ph">10</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ P9 游戏经历 ============ -->
+<!-- ============ P9 游戏经历 ============ -->
+<section class="slide" id="p9" data-page-node-id="DX3FWnWlb1ogflUfXhuC6a">
+  <div class="head" data-page-node-id="x9YfFVZKbamFG4PVCCHlBo">
+    <h2 data-page-node-id="HJcVPhL1BU16vIdqKdpf0Z">游戏履历</h2>
+    <div class="sub" data-page-node-id="VhHwV15nowRC8pTjradxZm">Gaming Background: Mobile · PC · Console Games</div>
+  </div>
+  <div class="featured" data-page-node-id="R0Y8nfud5XtOMvCGQtZS7S">
+    <div class="game" data-page-node-id="74wxa8uIK4KZvxX2KnAJCD">
+      <div class="cover" data-page-node-id="cvPE">
+        <img src="assets/p9/peaceelite-kv.jpg" alt="和平精英" data-page-node-id="cvPEimg">
+      </div>
+      <div class="body" data-page-node-id="bdPE">
+        <h3 data-page-node-id="nJfZknmmkUsKFBK7Kgy3wp">和平精英</h3>
+        <p data-page-node-id="vndZ2rvCBqhGN9FPSouMhO">测试&开服玩家，游戏时长 1000 小时+，最高段位荣耀皇冠，吃鸡胜率 9.2%，前十率 72%</p>
+      </div>
+    </div>
+    <div class="game" data-page-node-id="hNN4CHnSVTe4OU9Rq6KZYa">
+      <div class="cover" data-page-node-id="cvHSR">
+        <img src="assets/p9/hsr-kv.jpg" alt="崩坏：星穹铁道" data-page-node-id="cvHSRimg">
+      </div>
+      <div class="body" data-page-node-id="bdHSR">
+        <h3 data-page-node-id="BBVkUV3YlonedMfwepl3nD">崩坏：星穹铁道</h3>
+        <p data-page-node-id="65C129sF3OLrnaOxhsCng1">测试&开服玩家，游戏时长 500 小时+，开拓等级 70，累计充值 1W+</p>
+      </div>
+    </div>
+  </div>
+  <div class="wall" data-page-node-id="QzBiXDqD2ihn5tit2Vg4nB">
+    <h4 data-page-node-id="yEl9MkIzhDIF6C6nbPZE4e">其他游戏经历</h4>
+    <div class="hex-stack">
+      <!-- 三行 5 - 6 - 5 = 16 -->
+      <div class="hex-row">
+        <div class="hex"><img src="assets/games-liwei/genshin.jpg" alt="原神"><div class="name">原神</div></div>
+        <div class="hex"><img src="assets/games-liwei/zzz.jpg" alt="绝区零"><div class="name">绝区零</div></div>
+        <div class="hex"><img src="assets/games-liwei/hs.jpg" alt="炉石传说"><div class="name">炉石传说</div></div>
+        <div class="hex"><img src="assets/games-liwei/yys.jpg" alt="阴阳师"><div class="name">阴阳师</div></div>
+        <div class="hex"><img src="assets/games-liwei/arknights.jpg" alt="明日方舟"><div class="name">明日方舟</div></div>
+      </div>
+      <div class="hex-row">
+        <div class="hex"><img src="assets/games-liwei/tft.jpg" alt="金铲铲之战"><div class="name">金铲铲之战</div></div>
+        <div class="hex"><img src="assets/games-liwei/lol.jpg" alt="英雄联盟"><div class="name">英雄联盟</div></div>
+        <div class="hex"><img src="assets/games-liwei/mechabreak.jpg" alt="解限机"><div class="name">解限机</div></div>
+        <div class="hex"><img src="assets/games-liwei/pubg.jpg" alt="绝地求生"><div class="name">绝地求生</div></div>
+        <div class="hex"><img src="assets/games-liwei/valorantm.jpg" alt="无畏契约"><div class="name">无畏契约</div></div>
+        <div class="hex"><img src="assets/games-liwei/wukong.jpg" alt="黑神话悟空"><div class="name">黑神话悟空</div></div>
+      </div>
+      <div class="hex-row">
+        <div class="hex"><img src="assets/games-liwei/gta-series.jpg" alt="GTA 系列"><div class="name">GTA 系列</div></div>
+        <div class="hex"><img src="assets/games-liwei/uncharted.jpg" alt="神秘海域系列"><div class="name">神秘海域系列</div></div>
+        <div class="hex"><img src="assets/games-liwei/ac-series.jpg" alt="刺客信条系列"><div class="name">刺客信条系列</div></div>
+        <div class="hex"><img src="assets/games-liwei/nfs-series.jpg" alt="极品飞车系列"><div class="name">极品飞车系列</div></div>
+        <div class="hex"><img src="assets/games-liwei/gravityworld.jpg" alt="重力幻想世界"><div class="name">重力幻想世界</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="modal" id="modal" data-page-node-id="yjvYp9uWausErjuNrJ3yOS">
+  <div class="box" data-page-node-id="332bZVnGvGelut5i0FqdUg">
+    <div class="x" onclick="closeModal()" data-page-node-id="lmNxSAvF3zDQH2QZyFpqg0">×</div>
+    <div class="head-row" data-page-node-id="modalHeadRow20260909">
+      <div class="title" id="m-title" data-page-node-id="XSd0NwxoIauwBn7EuapZcc">作品</div>
+      <a id="m-link" class="go-link" target="_blank" rel="noopener" href="#" style="display:none">
+        点击查看
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17L17 7M9 7h8v8"/></svg>
+      </a>
+    </div>
+    <div class="preview sq" id="m-preview" data-page-node-id="gFCZGBlwsVtVlh7tEuAOq4"></div>
+    <div class="detail-tip" id="m-tip" data-page-node-id="mTip20260909"></div>
+  </div>
+</div>
+
+<script>
+const ro = new IntersectionObserver((entries)=>{
+  entries.forEach(e=>{ if(e.isIntersecting) e.target.classList.add('show'); });
+},{threshold:.15});
+document.querySelectorAll('.reveal').forEach(el=>ro.observe(el));
+
+/* ==================== P1 画布：卡片生成 ====================
+   世界尺寸固定 2400 × 1400 px（与视口无关 → 缩小浏览器时卡片间距不压缩）
+   布局数据：[fx, fy, width, ratio(宽/高), 图片路径, 标题, 副标题]
+   fx/fy 为世界坐标归一化值(0-1)，运行时换算为绝对 px
+   18 张真实素材：竖版 3:4 × 8 / 方形 1:1 × 2 / 横版 4:3 × 6 / 横版 16:9 × 1 / 横版 3:2 × 1
+   每张对应一段职业经历 / 创作作品；ratio = 宽/高
+   错落分布 3 段(上/中/下)，段内 x 错位、y 错位，避免网格对齐
+   注意：卡片角标序号 = 数组下标+1，新增卡片一律追加到数组末尾，插在中间会打乱已有编号
+   比例图标：竖版 portrait / 方形 sq / 横版 4:3 landscape / 16:9 cinematic / 3:2 three-two */
+const WORLD_W = 2400, WORLD_H = 1400;
+// P1 画布整体重排（2026-09-05）：6 列 × 4 行抖动网格 + 越格溢出，18 张散布全画布
+//   规则：3 竖带 × 2 横带 共 6 个分区各 3 张（左右不偏枯）；卡片间最小视觉间距 40px（含标题 meta）；
+//         宽度 175–275px 五档混排，横版/竖版/方版交错，形成错落节奏。
+//   生成脚本：.workbuddy/scripts/layout-p1-v2.py（种子 3782，可改种子重新生成）
+const CARD_DATA = [
+  [0.695,0.047,102,1.0000,'assets/p1/01-sketch-paint.jpg',      '素描手绘',                  'PAINT · 2014'],
+  [0.204,0.793,175,0.7500,'assets/p1/02-sapa-oc.jpg',           'OC角色孵化-萨帕',           'AIGC · 2026'],
+  [0.080,0.012,205,0.7500,'assets/p1/03-digital-paint.jpg',     '数码板绘-少女&枪',          'PAINT · 2015'],
+  [0.398,0.623,210,1.3333,'assets/p1/04-xinyou-live.jpg',       '《新游先锋大乱斗》栏目制作','LIVE SERIES · 2021'],
+  [0.380,0.274,175,0.7500,'assets/p1/05-mechabreak-top.jpg',    '解限机-新游期榜TOP1',       'PROJECT · 2025'],
+  [0.068,0.776,205,0.7500,'assets/p1/06-tokyo-tower-2024.jpg',  '人文摄影-东京塔',           'PHOTO · 2024'],
+  [0.584,0.024,205,0.7500,'assets/p1/07-hsr-kv-2023.jpg',       '《崩坏：星穹铁道》标杆孵化企划','LIVE SERIES · 2023'],
+  [0.906,0.101,205,1.0000,'assets/p1/08-nowater-badge.jpg',     'NOWATER原创徽章',           'PROJECT · 2020'],
+  [0.191,0.340,235,1.3333,'assets/p1/09-sapa-mayday.jpg',       '《萨帕的五一》AI短片',      'AIGC · 2026'],
+  [0.575,0.641,210,1.3333,'assets/p1/10-aceplan.jpg',           '《王牌计划》创作者计划',     'PROJECT · 2025'],
+  [0.832,0.518,275,1.7778,'assets/p1/11-gongyi-event.jpg',      '腾讯公益企划《解锁闲置物二次生命》','EVENT · 2020'],
+  [0.843,0.738,220,0.7500,'assets/p1/12-jk-girl-2020.jpg',      '人像摄影-JK少女',           'PHOTO · 2020'],
+  [0.722,0.329,260,1.3333,'assets/p1/13-gameplay-cool-video.jpg','《游戏玩法酷》栏目制作',   'VIDEO · 2018'],
+  [0.503,0.809,260,1.3333,'assets/p1/14-game-no-borders.jpg',   '《游戏无国界》栏目制作',     'VIDEO · 2018'],
+  [0.038,0.306,245,1.5000,'assets/p1/15-expo-dy-mecha.jpg',     '抖音创作者大会x解限机',     'EXPO · 2025'],
+  [0.362,0.011,260,1.3333,'assets/p1/16-netease-meow.jpg',      '网易喵菌形象设计',          'DESIGN · 2019'],
+  [0.708,0.529,185,1.0000,'assets/p1/17-gamejam-group-master.jpg','GAMEJAM作品《群主模拟器》','GAME · 2019'],
+  [0.181,0.602,235,1.3333,'assets/p1/18-fenix-girl-group.jpg',  'AIGC企划-FÉNIX女团',        'AIGC · 2026'],
+  // 19 新增：崩铁"蹦蹦吧开拓者主播"栏目 — 落位 #05 右上 / #07 左下 / #13 左上 三方夹角空隙
+  //        3:2 框（w=190, h=127），与 #05/#07/#13 横向均 ≥ 30px，纵向错开
+  [0.490,0.205,190,1.5000,'assets/p1/19-hsr-streamer-2023.jpg',  '《崩坏：星穹铁道》栏目制作', 'LIVE SERIES · 2023']
+];
+const canvasEl = document.getElementById('canvas');
+CARD_DATA.forEach((c,i)=>{
+  const [fx,fy,w,ratio,img,title,sub] = c;
+  const n = String(i+1).padStart(2,'0');
+  const el = document.createElement('div');
+  el.className = 'card';
+  el.style.left = Math.round(fx*WORLD_W)+'px';   // 绝对 px：视口变化不影响卡间距
+  el.style.top  = Math.round(fy*WORLD_H)+'px';
+  el.style.width = w+'px';
+  el.dataset.img = img;                          // 弹窗预览用
+  el.dataset.ratio = ratio;
+  el.innerHTML =
+    '<div class="thumb" style="aspect-ratio:'+ratio+'">'+
+      '<img src="'+img+'" alt="'+title+'">'+
+      '<span class="num">'+n+'</span>'+
+    '</div>'+
+    '<div class="meta">'+
+      '<div class="t1">'+title+'</div>'+
+      '<div class="t2">'+sub+'</div>'+
+    '</div>';
+  canvasEl.appendChild(el);
+});
+
+/* ==================== P1 画布：拖拽 + 缩放（还原 pryzm 原版） ====================
+   · 1:1 跟手，松手即停，无惯性滑动
+   · 边界：世界边缘最多推进视口 40%（与原版一致）
+   · 缩放：Ctrl / ⌘ + 滚轮，范围 0.4–1.6，以指针为中心 */
+(function(){
+  const stage  = document.getElementById('stage');
+  const canvas = document.getElementById('canvas');
+  const MIN = 0.4, MAX = 1.6;
+  let W = 0, H = 0;      // 世界尺寸（未缩放，固定 2400×1400）
+  let l = 1;             // 缩放
+  let s = 0, d = 0;      // 位移
+  let userZoomed = false; // 用户手动缩放过 → resize 时保留其缩放值
+  const clamp = (v,a,b)=> v<a?a:(v>b?b:v);
+
+  /* 移动端（≤768px）处理方式：
+     CSS @media 已把 #p1 .canvas 改为 2 列 grid，并用 !important 覆盖这里的 inline transform，
+     所以本 IIFE 全程保持运行 —— 不做提前 return，好处是 resize 双向完全可逆
+     （缩到窄再放大，画布能自动恢复原来的世界坐标布局）。
+     只需要在指针/滚轮 handler 里早退，避免在移动端捕获指针、阻塞页面滚动。 */
+  const mqMobile = matchMedia('(max-width: 768px)');
+
+  // 小屏等比收敛（只改缩放，不改世界尺寸 → 卡片间距比例恒定，不会挤在一起）
+  function fitScale(){ return clamp(Math.min(innerWidth/1500, innerHeight/860), MIN, 1); }
+
+  function measure(){ W = canvas.offsetWidth || WORLD_W; H = canvas.offsetHeight || WORLD_H; }
+  function bounds(){
+    const ux = 0.4*innerWidth, uy = 0.4*innerHeight;
+    s = (W*l <= innerWidth)  ? (innerWidth  - W*l)/2 : clamp(s, innerWidth  - W*l - ux, ux);
+    d = (H*l <= innerHeight) ? (innerHeight - H*l)/2 : clamp(d, innerHeight - H*l - uy, uy);
+  }
+  function apply(){ canvas.style.transform = 'translate('+s.toFixed(1)+'px,'+d.toFixed(1)+'px) scale('+l.toFixed(3)+')'; }
+  function reset(){
+    measure();
+    if(!userZoomed) l = fitScale();
+    s = (innerWidth - W*l)/2; d = (innerHeight - H*l)/2;
+    bounds(); apply();
+  }
+
+  addEventListener('resize', reset);
+  reset();
+
+  /* ---------- P1 标题：不再做视差 ----------
+     之前的做法是 fixed 定位 + JS 按滚动进度算 translateY：标题移动量远大于滚动量（且用了 easeOut 曲线，
+     前段更快），所以"手一滚标题就窜上去"；淡出又放在 P1 末段才启动，滚到 P2 时还没淡完 → 与 P2 内容交叠。
+     现在标题回到 P1 文档流（pryzm 参考页同款：hero 用 flex items-end，文案层普通块）：
+       位移 = 滚动量 × 1，速度天然与鼠标/滚轮一致；
+       标题属于 P1，滚出 P1 立即离开视口，不存在与 P2 交叠。 */
+  const ctlTip = document.getElementById('ctlTip');
+  const p1El   = document.getElementById('p1');
+  function tipFade(){
+    if(!ctlTip || !p1El) return;
+    const y   = window.scrollY || window.pageYOffset || 0;
+    const t2  = Math.min(1, Math.max(0, y / (p1El.offsetHeight * 0.55)));
+    ctlTip.style.opacity = (1 - t2).toFixed(3);
+  }
+  addEventListener('scroll', tipFade, {passive:true});
+  addEventListener('resize', tipFade);
+  tipFade();
+
+  // ---------- nav 滚动高亮 ----------
+  // 按 scrollY 落点区间映射到 nav 项（P5/P6/P9 无独立 nav，按最近"上游"项 fallback）
+  //   y <  p2Top  -> 欢迎 (#p1)
+  //   p2Top ≤ y < p3Top -> 联系 (#p2)
+  //   p3Top ≤ y < p7Top -> 履历 (#p4)  ← 包含 P3/P4/P5/P6
+  //   p7Top ≤ y < p8Top -> 项目 (#p7)
+  //   y ≥  p8Top -> 作品 (#p8)         ← 包含 P8/P9
+  const navLinks = Array.from(document.querySelectorAll('.nav .menu a'));
+  function navActive() {
+    const y = window.scrollY;
+    const p2Top = document.getElementById('p2').offsetTop;
+    const p3Top = document.getElementById('p3').offsetTop;
+    const p7Top = document.getElementById('p7').offsetTop;
+    const p8Top = document.getElementById('p8').offsetTop;
+    let anchor;
+    if (y < p2Top)        anchor = '#p1';
+    else if (y < p3Top)   anchor = '#p2';
+    else if (y < p7Top)   anchor = '#p4';
+    else if (y < p8Top)   anchor = '#p7';
+    else                  anchor = '#p8';
+    navLinks.forEach(a => a.classList.toggle('active', a.getAttribute('href') === anchor));
+  }
+  addEventListener('scroll', navActive, {passive:true});
+  addEventListener('resize', navActive);
+  navActive();
+
+  // ---------- 移动端汉堡菜单：开/关 + 点击菜单项后自动收起 ----------
+  const navEl  = document.querySelector('.nav');
+  const burger = document.getElementById('nav-burger');
+  function closeNav(){ navEl && navEl.classList.remove('open'); }
+  function toggleNav(){ navEl && navEl.classList.toggle('open'); }
+  window.toggleNav = toggleNav;
+  if (burger) burger.addEventListener('click', toggleNav);
+  // 点击菜单项跳转后收起抽屉
+  navLinks.forEach(a => a.addEventListener('click', closeNav));
+
+  // 调试钩子：?p1ox=200&p1oy=300 强制初始偏移，便于预览画布其他区域
+  try {
+    const u = new URL(location.href);
+    const ox = u.searchParams.get('p1ox'), oy = u.searchParams.get('p1oy');
+    if (ox !== null || oy !== null) {
+      s = Number(ox)||0; d = Number(oy)||0; bounds(); apply();
+    }
+  } catch(_) {}
+
+  let dragging = false, moved = false, px = 0, py = 0;
+  stage.addEventListener('pointerdown', e=>{
+    if (mqMobile.matches) return;   // 移动端不捕获指针，否则页面无法滚动
+    dragging = true; moved = false; px = e.clientX; py = e.clientY;
+    stage.classList.add('dragging');
+    try{ stage.setPointerCapture(e.pointerId); }catch(_){}
+  });
+  stage.addEventListener('pointermove', e=>{
+    if (mqMobile.matches) return;
+    if(!dragging) return;
+    s += e.clientX - px; d += e.clientY - py;
+    px = e.clientX; py = e.clientY;
+    if(Math.abs(e.movementX)+Math.abs(e.movementY) > 0) moved = true;
+    bounds(); apply();
+  });
+  const stop = e=>{
+    if(!dragging) return;
+    dragging = false;
+    stage.classList.remove('dragging');
+    try{ stage.releasePointerCapture(e.pointerId); }catch(_){}
+  };
+  stage.addEventListener('pointerup', stop);
+  stage.addEventListener('pointercancel', stop);
+  stage.addEventListener('pointerleave', stop);
+  stage.addEventListener('dragstart', e=>e.preventDefault());
+
+  stage.addEventListener('wheel', e=>{
+    if (mqMobile.matches) return;
+    if(!(e.ctrlKey || e.metaKey)) return;   // 普通滚轮仍然翻页
+    e.preventDefault();
+    const nl = clamp(l * (e.deltaY < 0 ? 1.12 : 1/1.12), MIN, MAX);
+    if(nl === l) return;
+    const k = nl / l;
+    s = e.clientX - (e.clientX - s) * k;
+    d = e.clientY - (e.clientY - d) * k;
+    l = nl; userZoomed = true;
+    bounds(); apply();
+  }, {passive:false});
+
+  // 记录拖拽状态，避免拖动结束时误触发卡片点击
+  document.getElementById('p1').dataset.dragged = '0';
+  stage.addEventListener('pointerup', ()=>{ setTimeout(()=>{ document.getElementById('p1').dataset.dragged = moved ? '1':'0'; },0); });
+})();
+
+const panels = document.querySelectorAll('#acc .panel');
+panels.forEach(p=>{
+  p.addEventListener('click',()=>{
+    panels.forEach(x=>x.classList.remove('active'));
+    p.classList.add('active');
+  });
+});
+
+/* ---------- P4 高度统一 ----------
+   四个胶囊（含未展开圆条）+ 展开卡片一律同高：
+   逐个把 panel 临时置为 active，量出 .body 的自然高度（offsetHeight 已含 padding），取最大值写入 --p4-h。
+   内容最多的"虎牙"通常就是最大值 → 全部按虎牙高度对齐，点网易/雷猴时不会再短一截。
+   切换 active 时高度恒定，不出现忽高忽低。 */
+function lockP4Height(){
+  if(!panels.length) return;
+  const wasActive = Array.from(panels).map(p=>p.classList.contains('active'));
+  let max = 0;
+  // 注意：必须"一次只展开一个"来量。同时挂上 active 时展开态宽度被 max-width 挤压，
+  // 文字大量换行会把 body 撑到 1400px+，量出来的高度是假的。
+  // 另：active 状态 width 是 transition(0.55s)，加 active 后立即读 offsetWidth 仍是 110（inactive 旧值），
+  // 导致 body 文字被压成超长多行，量出 2000+px。所以加 .measuring 强制 480 宽 + 关闭 transition。
+  panels.forEach(p=>{
+    panels.forEach(x=>x.classList.remove('active'));
+    p.classList.add('active','measuring');
+    const b = p.querySelector('.body');
+    if(b) max = Math.max(max, b.offsetHeight);
+  });
+  panels.forEach((p,i)=>{
+    p.classList.remove('measuring');
+    p.classList.toggle('active', wasActive[i]);
+  });
+  if(max > 0) document.documentElement.style.setProperty('--p4-h', Math.ceil(max) + 'px');
+}
+lockP4Height();
+addEventListener('resize', lockP4Height);
+if(document.fonts && document.fonts.ready) document.fonts.ready.then(lockP4Height);
+
+/* ---------- P5/P6 列高度锁定 ----------
+   需求：hover 展开某个职责时，P5/P6 的 section 高度不允许变化 —— 否则下方 P6/P7 会实时上下跳动。
+   做法：不锁成一个大固定值（那样会留大片空白、并把每个职责行距拉散），而是算一个"刚好够用"的上界：
+     锁定值 = 默认态（首个职责展开）的列自然高 + (最长 desc − 首个 desc)
+   因为同一时刻只会展开一个职责（互斥单选），任意单项展开时列高 = 自然高 − 首个desc + 该desc ≤ 锁定值，
+   所以 section 高度恒定；多余空间只有 (最长desc − 首个desc)，通常几十 px，肉眼几乎不可见。 */
+function lockExpHeight(){
+  document.querySelectorAll('.exp .col-list').forEach(list=>{
+    list.style.minHeight = '';                 // 先清旧锁定值，才能量到真实自然高
+    const items = Array.from(list.querySelectorAll('.list-item'));
+    if(!items.length) return;
+    const descs = items.map(it=>it.querySelector('.desc')).filter(Boolean);
+    if(!descs.length) return;
+
+    const natural = list.offsetHeight;         // 默认态（首项展开）列高
+    const heights = descs.map(d=>{             // 逐个量 desc 的自然高（临时解除 max-height）
+      const oldCss = d.style.cssText;
+      d.style.transition = 'none';
+      d.style.maxHeight  = 'none';
+      d.style.overflow   = 'visible';
+      d.style.opacity    = '1';
+      d.style.marginTop  = '8px';
+      const h = d.offsetHeight;
+      d.style.cssText = oldCss;                // 还原（含原 transition）
+      return h;
+    });
+
+    const firstH = heights[0];
+    const maxH   = Math.max.apply(null, heights);
+    list.style.minHeight = Math.ceil(natural + Math.max(0, maxH - firstH)) + 'px';
+  });
+}
+lockExpHeight();
+let expResizeTimer = null;
+addEventListener('resize', ()=>{
+  clearTimeout(expResizeTimer);
+  expResizeTimer = setTimeout(lockExpHeight, 150);
+});
+if(document.fonts && document.fonts.ready) document.fonts.ready.then(lockExpHeight);
+
+
+
+document.querySelectorAll('#p8 video').forEach(v=>{
+  const vio = new IntersectionObserver(entries=>{
+    entries.forEach(e=>{ if(e.isIntersecting){ v.play().catch(()=>{}); } else { v.pause(); } });
+  },{threshold:.4});
+  vio.observe(v);
+});
+
+/* ============ P8 封面素材注入（必须在 setupP8Scroll 克隆之前执行）============
+   双素材结构：
+     data-cover  → 封面素材，铺满滚动墙里的固定比例框（object-fit:cover，会裁切）
+     data-detail → 详情素材，点击后弹窗按原图尺寸展示（不裁切，高 > 960 出滚动条）
+   两者独立：封面做视觉节奏，详情做完整内容。填了 cover 才隐藏编号占位。 */
+function injectP8Covers(){
+  document.querySelectorAll('#p8 .item').forEach(it=>{
+    const src = (it.dataset.cover || '').trim();
+    if (!src) return;
+    it.classList.add('has-cover');
+    const img = document.createElement('img');
+    img.className = 'cov';
+    img.src = src;
+    img.alt = it.dataset.title || '';
+    img.loading = 'lazy';
+    img.decoding = 'async';
+    it.appendChild(img);
+  });
+}
+injectP8Covers();
+
+/* ============ P8 滚动驱动横向移动 ============
+   删除原 CSS 自动 marquee → 改为 scroll 驱动
+   三行 track 各自克隆到 4 套（56 item），最大位移 -25% / -50% / -75%（无缝）
+   进度：#p8 顶部贴视口顶 = 0，#p8 底部贴视口底 = 1 */
+function setupP8Scroll(){
+  const p8 = document.getElementById('p8');
+  if (!p8) return;
+  const rows = p8.querySelectorAll('.row');
+  // 三行位移总占 track 宽的 8% / 15% / 10%（无缝）
+  const speeds = [0.08, 0.15, 0.10];
+  // 把每行 track 内容克隆到 N 套：N 按视口宽动态计算，保证「track 宽 − 最大位移 ≥ 视口宽 + 300 余量」
+  //   · 固定 4 套在 1920 宽屏上会露白（尤其 item 数被削减后），故改为动态
+  rows.forEach((row, ri) => {
+    const track = row.querySelector('.track');
+    const items = Array.from(track.children);
+    const N = items.length;
+    if (N === 0) return;
+    const singleW = track.scrollWidth + 6;      // 单套宽（补末尾 gap）
+    const speed = speeds[ri] != null ? speeds[ri] : 0.10;
+    const vw = Math.max(window.innerWidth, 1920); // 以 1920 为下限，宽屏也安全
+    const need = Math.ceil((vw + 300) / (singleW * (1 - speed)));
+    const copies = Math.max(4, need);           // 最少 4 套，保持视觉节奏
+    for (let k = 1; k < copies; k++) {
+      const frag = document.createDocumentFragment();
+      for (let i = 0; i < N; i++) {
+        frag.appendChild(items[i].cloneNode(true));
+      }
+      track.appendChild(frag);
+    }
+  });
+  const tracks = p8.querySelectorAll('.track');
+
+  let raf = null;
+  function update(){
+    raf = null;
+    const rect = p8.getBoundingClientRect();
+    const vh = window.innerHeight;
+    const total = rect.height - vh;
+    let progress = total > 0 ? (-rect.top) / total : 0;
+    if (progress < 0) progress = 0;
+    else if (progress > 1) progress = 1;
+    tracks.forEach((track, i) => {
+      const tx = -100 * speeds[i] * progress;
+      track.style.transform = `translate3d(${tx}%, 0, 0)`;
+    });
+  }
+  function schedule(){
+    if (raf == null) raf = requestAnimationFrame(update);
+  }
+  window.addEventListener('scroll', schedule, {passive:true});
+  window.addEventListener('resize', schedule);
+  update();
+}
+setupP8Scroll();
+
+/* ============ P8 作品点击 → 弹窗（展示「详情素材」，与封面分离）============
+   展示规则：
+     1. 容器宽度/高度按详情素材的【原始像素尺寸】等比适配，不裁切、不变形
+     2. 只按宽度缩放（宽不超过可用宽度 min(960, 视口宽-140)），高度随之等比
+     3. 若等比高度 > 960px → 容器高度锁 960，纵向滚动条展示（图片不压缩，保持清晰）
+   用事件委托绑定在 .rows 上：JS 克隆出来的 item 也能正常触发 */
+const DETAIL_MAX_H = 720;   // 详情展示最大高度（避免竖图按宽缩放后撑爆视口上下边界）
+const DETAIL_MAX_W = 960;   // 详情展示最大宽度
+
+/* 关闭弹窗：一并清掉详情模式（box 宽度、preview 内联尺寸、滚动条状态） */
+function closeModal(){
+  const modal   = document.getElementById('modal');
+  const preview = document.getElementById('m-preview');
+  const linkBtn = document.getElementById('m-link');
+  modal.classList.remove('show', 'detail');
+  preview.className = 'preview sq';
+  preview.style.cssText = '';
+  const tip = document.getElementById('m-tip');
+  if (tip) tip.textContent = '';
+  if (linkBtn) { linkBtn.href = '#'; linkBtn.style.display = 'none'; }
+}
+window.closeModal = closeModal;
+
+function openP8Detail(item){
+  const modal    = document.getElementById('modal');
+  const preview  = document.getElementById('m-preview');
+  const tip      = document.getElementById('m-tip');
+  const linkBtn  = document.getElementById('m-link');
+  const title    = item.dataset.title || '作品';
+  const detail   = (item.dataset.detail || '').trim();
+  const cover    = (item.dataset.cover  || '').trim();
+  const ext      = (item.dataset.link   || '').trim();
+
+  // 标题不再拼素材定位前缀（如 R1-08 · …），只保留作品标题
+  document.getElementById('m-title').textContent = title;
+  modal.classList.add('detail');
+  preview.className = 'preview fit';
+  preview.style.cssText = '';
+  tip.textContent = '';
+
+  // 链接按钮：有 data-link 才显示，无则隐藏
+  if (linkBtn) {
+    if (ext) { linkBtn.href = ext; linkBtn.style.display = 'inline-flex'; }
+    else      { linkBtn.href = '#';    linkBtn.style.display = 'none'; }
+  }
+
+  // 详情图：data-detail 支持空格分隔的多张（多张时纵向堆叠）
+  const urls = detail ? detail.split(/\s+/) : [];
+  const srcs = urls.length ? urls : (cover ? [cover] : []);
+
+  if (!srcs.length) {
+    preview.innerHTML = '<div class="ph-empty">详情素材待补充<br><span style="opacity:.6">（data-detail）</span></div>';
+    modal.classList.add('show');
+    return;
+  }
+
+  // 单图：img 直接挂 preview；多图：挂纵向 stack 容器
+  // 注意：单图时绝不能预置 <img alt="">——否则 querySelectorAll('img')[0] 会命中那个空占位，
+  //       真正的详情图反而拿不到 JS 算出的尺寸（表现为弹窗里多出一块空白区域）
+  if (srcs.length > 1) {
+    preview.innerHTML = '<div class="stack"></div>';
+  } else {
+    preview.innerHTML = '';
+  }
+  const target = srcs.length > 1 ? preview.querySelector('.stack') : preview;
+
+  let loadedCount = 0;
+  const total = srcs.length;
+  const meta = [];   // 收集每张图 {nw, nh} 用于计算容器总高
+
+  function tryFinish(){
+    if (loadedCount < total) return;
+    // 用第一张图决定统一缩放基准。
+    // 横图（nw>=nh）按宽度缩放、竖图（nh>nw）按高度缩放，
+    // 双约束确保单图既能最大化展示、又不会撑爆弹窗（上下留白充足）
+    const first = meta[0];
+    const ratio = first.nw / first.nh;
+    let scale;
+    if (ratio >= 1) {
+      // 横图/方形：宽度优先
+      scale = Math.min(1, DETAIL_MAX_W / first.nw, DETAIL_MAX_H / first.nh);
+    } else {
+      // 竖图：高度优先（关键：避免竖图按宽缩放后撑满视口）
+      scale = Math.min(1, DETAIL_MAX_H / first.nh, DETAIL_MAX_W / first.nw);
+    }
+    const dispW  = Math.round(first.nw * scale);
+    let totalH = 0;
+    meta.forEach((m, i) => {
+      const w = Math.round(m.nw * scale);
+      const h = Math.round(m.nh * scale);
+      totalH += h;
+      if (i > 0) totalH += 10;   // gap: 10px
+      const img = target.querySelectorAll('img')[i];
+      img.style.width = w + 'px';
+      img.style.height = h + 'px';
+    });
+    const scroll = totalH > DETAIL_MAX_H;
+    preview.style.width     = (dispW + (scroll ? 14 : 0)) + 'px';
+    preview.style.maxHeight = DETAIL_MAX_H + 'px';
+    preview.classList.toggle('scroll', scroll);
+    // 不再展示图片像素尺寸（属于素材定位类信息），仅在内容溢出时给出滚轮提示
+    tip.textContent = scroll ? '滚轮查看完整内容' : '';
+  }
+
+  srcs.forEach((src, i) => {
+    const img = document.createElement('img');
+    img.alt = '';
+    img.onload = () => {
+      meta[i] = { nw: img.naturalWidth || 800, nh: img.naturalHeight || 600 };
+      loadedCount++;
+      tryFinish();
+    };
+    img.onerror = () => {
+      meta[i] = { nw: 100, nh: 100 };
+      loadedCount++;
+      tryFinish();
+    };
+    target.appendChild(img);
+    img.src = src;
+  });
+
+  modal.classList.add('show');
+}
+document.querySelector('#p8 .rows').addEventListener('click', e=>{
+  const item = e.target.closest('#p8 .item');
+  if (item) openP8Detail(item);
+});
+
+document.querySelectorAll('#p1 .card').forEach(c=>{
+  c.addEventListener('click',()=>{
+    if(document.getElementById('p1').dataset.dragged === '1') return;  // 拖拽结束不触发
+    const t1  = c.querySelector('.t1')?.textContent || '';
+    document.getElementById('m-title').textContent = t1;
+    // 按卡片比例切 preview 容器（3×4 / 1×1 / 4×3 / 16:9 / 3×2），并把卡片图片注入弹窗
+    const r = parseFloat(c.dataset.ratio || '1.3333');
+    let cls;
+    if (r < 0.9)        cls = 'preview portrait';    // 3:4 竖版
+    else if (r > 1.7)   cls = 'preview cinematic';   // 16:9 宽银幕
+    else if (r > 1.4)   cls = 'preview three-two';   // 3:2 横版（介于 4:3 与 16:9 之间）
+    else if (r > 1.15)  cls = 'preview landscape';   // 4:3 横版
+    else                cls = 'preview sq';           // 1:1 方形
+    const preview = document.getElementById('m-preview');
+    document.getElementById('modal').classList.remove('detail');   // 退出详情模式，恢复 560px 固定比例框
+    document.getElementById('m-tip').textContent = '';
+    const linkBtn = document.getElementById('m-link');
+    if (linkBtn) { linkBtn.href = '#'; linkBtn.style.display = 'none'; }
+    preview.style.cssText = '';
+    preview.className = cls;
+    preview.innerHTML = '<img src="'+c.dataset.img+'" alt="">';
+    document.getElementById('modal').classList.add('show');
+  });
+});
+
+const toast = document.getElementById('toast');
+document.querySelectorAll('#p2 .contact .item').forEach(it=>{
+  it.addEventListener('click',()=>{
+    const v = it.dataset.copy;
+    if(!v) return;
+    navigator.clipboard.writeText(v).then(()=>{
+      toast.style.opacity='1';
+      setTimeout(()=>toast.style.opacity='0',1200);
+    });
+  });
+});
+
+document.querySelectorAll('#p9 .icons .icon').forEach(ic=>{
+  ic.addEventListener('click',()=>{
+    const name = ic.querySelector('.name')?.textContent || '游戏';
+    document.getElementById('m-title').textContent = name;
+    document.getElementById('m-meta').textContent = 'GAMING LIFE';
+    document.getElementById('m-body').innerHTML = '<p>点击查看 '+name+' 的详细游戏经历 / 段位 / 战绩 等。</p>';
+    document.getElementById('modal').classList.add('show');
+  });
+});
+
+document.getElementById('modal').addEventListener('click',e=>{
+  if(e.target.id==='modal') closeModal();
+});
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape') closeModal();
+});
+
+/* ---------- P5/P6 入场动画（GSAP：仅 transform + opacity，compositor 友好） ----------
+   用 ScrollTrigger 触发 list-item / ach-item 从下方淡入，stagger 形成"逐条显示"的效果 */
+gsap.registerPlugin(ScrollTrigger);
+['#p5', '#p6'].forEach(sel=>{
+  const items = document.querySelectorAll(sel + ' .list-item, ' + sel + ' .ach-item');
+  gsap.set(items, {y: 24, opacity: 0});
+  ScrollTrigger.create({
+    trigger: sel,
+    start: 'top 70%',
+    once: true,
+    onEnter: ()=>{
+      gsap.to(items, {y: 0, opacity: 1, duration: .55, ease: 'power2.out', stagger: .06});
+    }
+  });
+});
+
+/* P4 进入视口时，把当前 active 面板的 biz 从左侧淡入；切换面板时则带 stagger */
+const p4Biz = document.querySelectorAll('#p4 .panel.active .biz > div');
+gsap.set(p4Biz, {x: -8, opacity: 0});
+ScrollTrigger.create({
+  trigger: '#p4',
+  start: 'top 75%',
+  once: true,
+  onEnter: ()=>{ gsap.to(p4Biz, {x: 0, opacity: 1, duration: .5, ease: 'power2.out', stagger: .05}); }
+});
+document.querySelector('#acc').addEventListener('click', e=>{
+  const panel = e.target.closest('.panel');
+  if(!panel) return;
+  // 等 active 切换后再播放
+  requestAnimationFrame(()=>{
+    const biz = panel.querySelectorAll('.biz > div');
+    gsap.fromTo(biz, {x: -10, opacity: 0}, {x: 0, opacity: 1, duration: .35, ease: 'power2.out', stagger: .04});
+  });
+});
+
+/* ---------- P5/P6 职责 hover 互斥 ----------
+     第一个 .list-item 默认展开（CSS 静态规则）；
+     当任意**其他**职责被 hover 时，给该列容器加 `.has-hover` 类 + 给该项加 `.hover` 类；
+     CSS 据此把第一个未带 .hover 的默认展开项收起 —— 单选互斥 */
+document.querySelectorAll('.exp .col-list').forEach(list => {
+  const items = list.querySelectorAll('.list-item');
+  items.forEach(item => {
+    item.addEventListener('mouseenter', () => {
+      list.classList.add('has-hover');
+      item.classList.add('hover');
+    });
+    item.addEventListener('mouseleave', () => {
+      item.classList.remove('hover');
+      // 鼠标移出后若没有任何项 hover，恢复第一个默认展开
+      if (!list.querySelector('.list-item.hover')) {
+        list.classList.remove('has-hover');
+      }
+    });
+  });
+});
+</script>
+</body>
+</html>
